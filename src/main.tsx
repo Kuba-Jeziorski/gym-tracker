@@ -4,7 +4,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { CurrentWorkoutProvider } from './contexts/CurrentWorkoutContext'
 import { LanguageProvider } from './contexts/LanguageContext'
 import { WeightUnitProvider } from './contexts/WeightUnitContext'
+import { UserProfileProvider } from './contexts/UserProfileContext'
 import { CompletedWorkoutsProvider } from './contexts/CompletedWorkoutsContext'
+import { CustomExercisesProvider } from './contexts/CustomExercisesContext'
+import { WorkoutTemplatesProvider } from './contexts/WorkoutTemplatesContext'
 import './index.css'
 import App from './App.tsx'
 
@@ -23,11 +26,17 @@ createRoot(container).render(
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
         <WeightUnitProvider>
+          <UserProfileProvider>
           <CompletedWorkoutsProvider>
-            <CurrentWorkoutProvider>
-              <App />
-            </CurrentWorkoutProvider>
+            <CustomExercisesProvider>
+              <WorkoutTemplatesProvider>
+                <CurrentWorkoutProvider>
+                  <App />
+                </CurrentWorkoutProvider>
+              </WorkoutTemplatesProvider>
+            </CustomExercisesProvider>
           </CompletedWorkoutsProvider>
+          </UserProfileProvider>
         </WeightUnitProvider>
       </LanguageProvider>
     </QueryClientProvider>

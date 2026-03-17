@@ -1,15 +1,18 @@
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { useCurrentWorkout } from "../contexts/CurrentWorkoutContext";
+import { useWorkoutTemplates } from "../contexts/WorkoutTemplatesContext";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useWeightUnit } from "../contexts/WeightUnitContext";
 import { useCompletedWorkouts } from "../contexts/CompletedWorkoutsContext";
-import { exercises } from "../data/exercises";
+import { useAllExercises } from "../contexts/CustomExercisesContext";
 import type { StoredWorkout } from "../data/workoutStorage";
 import { inputWeightToKg } from "../helpers/weightConversion";
 import { Select } from "../components/Select";
 import { CircleMinus } from "lucide-react";
 import { ConfirmModal } from "../components/ConfirmModal";
+import { routes } from "../routes";
 import { cn } from "../lib/utils";
 
 type SetValues = {
@@ -37,7 +40,11 @@ function isEmptySet(s: SetValues): boolean {
   );
 }
 
-function canAddSet(sets: SetValues[], exerciseUniqueName: string): boolean {
+function canAddSet(
+  exercises: { weight?: boolean; reps?: boolean; time?: boolean; unique_name: string }[],
+  sets: SetValues[],
+  exerciseUniqueName: string,
+): boolean {
   if (sets.length === 0) return true;
   const exercise = exercises.find((e) => e.unique_name === exerciseUniqueName);
   if (!exercise) return false;
@@ -48,18 +55,74 @@ function canAddSet(sets: SetValues[], exerciseUniqueName: string): boolean {
   return true;
 }
 
+function isSetValidForExercise(
+  set: SetValues,
+  exercise: { weight?: boolean; reps?: boolean; time?: boolean } | undefined,
+): boolean {
+  if (!exercise) return false;
+  if (exercise.weight && !(set.weight?.trim() ?? "")) return false;
+  if (exercise.reps && !(set.reps?.trim() ?? "")) return false;
+  if (exercise.time && !(set.time?.trim() ?? "")) return false;
+  return true;
+}
+
+function canFinishWorkout(
+  exercises: WorkoutExercise[] | undefined,
+  allExercises: { weight?: boolean; reps?: boolean; time?: boolean; unique_name: string }[],
+): boolean {
+  if (!exercises?.length) return false;
+  const hasAtLeastOneValidSet = exercises.some((ex) => {
+    const exercise = allExercises.find((e) => e.unique_name === ex.exerciseUniqueName);
+    return (ex.sets ?? []).some((s) => isSetValidForExercise(s, exercise));
+  });
+  const everySetValid = exercises.every((ex) => {
+    const exercise = allExercises.find((e) => e.unique_name === ex.exerciseUniqueName);
+    if (!exercise) return (ex.sets ?? []).length === 0 || (ex.sets ?? []).every(isEmptySet);
+    return (ex.sets ?? []).every((s) => isSetValidForExercise(s, exercise));
+  });
+  return hasAtLeastOneValidSet && everySetValid;
+}
+
 export function Workout() {
-  const { currentWorkout, startWorkout, endWorkout } = useCurrentWorkout();
+  const {
+    currentWorkout,
+    startWorkout,
+    startWorkoutWithTemplate,
+    consumeInitialExercises,
+    endWorkout,
+  } = useCurrentWorkout();
+  const { templates, updateTemplate, addTemplate } = useWorkoutTemplates();
   const { t } = useLanguage();
   const { weightUnit } = useWeightUnit();
+  const allExercises = useAllExercises();
+  const [selectedTemplateId, setSelectedTemplateId] = useState("");
   const [removeSetTarget, setRemoveSetTarget] = useState<{
     exerciseIndex: number;
     setIndex: number;
   } | null>(null);
   const { appendWorkout } = useCompletedWorkouts();
+  const navigate = useNavigate();
   const [discardModalOpen, setDiscardModalOpen] = useState(false);
+  const [templateSaveModal, setTemplateSaveModal] = useState<{
+    stored: StoredWorkout;
+    exerciseUniqueNames: string[];
+    templateId: string;
+  } | null>(null);
+  const [atTop, setAtTop] = useState(true);
+  const [atBottom, setAtBottom] = useState(true);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  const { control, register, watch, handleSubmit, setValue } =
+  const checkScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const threshold = 2;
+    setAtTop(el.scrollTop <= threshold);
+    setAtBottom(
+      el.scrollHeight - el.scrollTop - el.clientHeight <= threshold,
+    );
+  }, []);
+
+  const { control, register, watch, handleSubmit, setValue, reset } =
     useForm<WorkoutFormValues>({
       defaultValues: { exercises: [] },
     });
@@ -75,9 +138,27 @@ export function Workout() {
 
   const watchedExercises = watch("exercises");
 
-  const exerciseSelectOptions = exercises.map((ex) => ({
+  useEffect(() => {
+    checkScroll();
+  }, [exerciseFields.length, checkScroll]);
+
+  useEffect(() => {
+    if (!currentWorkout) return;
+    const initialNames = consumeInitialExercises();
+    reset({
+      exercises:
+        initialNames && initialNames.length > 0
+          ? initialNames.map((exerciseUniqueName) => ({
+              exerciseUniqueName,
+              sets: [defaultSet()],
+            }))
+          : [],
+    });
+  }, [currentWorkout?.id, consumeInitialExercises, reset]);
+
+  const exerciseSelectOptions = allExercises.map((ex) => ({
     value: ex.unique_name,
-    label: t(ex.unique_name),
+    label: ex.unique_name.startsWith("custom_") ? ex.name : t(ex.unique_name),
   }));
 
   const onFinish = handleSubmit((data) => {
@@ -97,9 +178,54 @@ export function Workout() {
         };
       }),
     };
+    const exerciseUniqueNames = stored.exercises.map((e) => e.exerciseUniqueName);
+    const templateId = currentWorkout!.templateId;
+    if (templateId) {
+      const template = templates.find((t) => t.id === templateId);
+      const originalNames = template?.exerciseUniqueNames ?? [];
+      const modified =
+        originalNames.length !== exerciseUniqueNames.length ||
+        originalNames.some((name, i) => name !== exerciseUniqueNames[i]);
+      if (modified && template) {
+        setTemplateSaveModal({ stored, exerciseUniqueNames, templateId });
+        return;
+      }
+    }
     appendWorkout(stored);
     endWorkout();
+    navigate(routes.workout, { state: { tab: "completed" } });
   });
+
+  const handleTemplateSaveUpdate = () => {
+    if (!templateSaveModal) return;
+    const template = templates.find((t) => t.id === templateSaveModal.templateId);
+    if (template) {
+      updateTemplate(templateSaveModal.templateId, {
+        name: template.name,
+        exerciseUniqueNames: templateSaveModal.exerciseUniqueNames,
+      });
+    }
+    appendWorkout(templateSaveModal.stored);
+    endWorkout();
+    setTemplateSaveModal(null);
+    navigate(routes.workout, { state: { tab: "completed" } });
+  };
+
+  const handleTemplateSaveNew = () => {
+    if (!templateSaveModal) return;
+    const template = templates.find((t) => t.id === templateSaveModal.templateId);
+    const name = template
+      ? `${template.name} (${t("workout_templateCopy")})`
+      : t("templates_namePlaceholder");
+    addTemplate({
+      name,
+      exerciseUniqueNames: templateSaveModal.exerciseUniqueNames,
+    });
+    appendWorkout(templateSaveModal.stored);
+    endWorkout();
+    setTemplateSaveModal(null);
+    navigate(routes.workout, { state: { tab: "completed" } });
+  };
 
   const onDiscardClick = () => setDiscardModalOpen(true);
   const onDiscardConfirm = () => {
@@ -109,25 +235,74 @@ export function Workout() {
   const onDiscardCancel = () => setDiscardModalOpen(false);
 
   if (!currentWorkout) {
+    const templateOptions = templates.map((tmpl) => ({
+      value: tmpl.id,
+      label: tmpl.name,
+    }));
+    const handleStartWithTemplate = () => {
+      const template = templates.find((tmpl) => tmpl.id === selectedTemplateId);
+      if (template) {
+        startWorkoutWithTemplate(template.id, template.exerciseUniqueNames);
+        setSelectedTemplateId("");
+      }
+    };
     return (
       <div>
         <h1 className="text-2xl font-semibold text-brand-dark mb-2">
           {t("workout_title")}
         </h1>
         <p className="text-brand-text-muted mb-6">{t("workout_noWorkout")}</p>
-        <button
-          type="button"
-          onClick={startWorkout}
-          className="px-4 py-2 rounded-lg bg-brand-primary text-brand-bg font-medium hover:bg-brand-primary-hover transition-colors duration-300"
-        >
-          {t("workout_start")}
-        </button>
+        <div className="flex flex-col gap-4">
+          <button
+            type="button"
+            onClick={startWorkout}
+            className="w-fit px-4 py-2 rounded-lg bg-brand-primary text-brand-bg font-medium hover:bg-brand-primary-hover transition-colors duration-300"
+          >
+            {t("workout_start")}
+          </button>
+          {templates.length > 0 && (
+            <div className="flex flex-wrap items-end gap-2">
+              <label className="flex flex-col gap-1">
+                <span className="text-sm text-brand-text-muted">
+                  {t("workout_startWithTemplate")}
+                </span>
+                <div className="min-w-[16rem]">
+                  <Select
+                    value={selectedTemplateId}
+                    onChange={setSelectedTemplateId}
+                    options={templateOptions}
+                    placeholder={t("workout_chooseTemplate")}
+                  />
+                </div>
+              </label>
+              <button
+                type="button"
+                onClick={handleStartWithTemplate}
+                disabled={!selectedTemplateId}
+                className={cn(
+                  "h-[42px] px-4 rounded-lg border font-medium transition-colors duration-300",
+                  selectedTemplateId
+                    ? "border-brand-primary text-brand-primary hover:bg-brand-primary/10"
+                    : "border-brand-border text-brand-text-muted cursor-not-allowed",
+                )}
+              >
+                {t("workout_startWithTemplateButton")}
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     );
   }
 
+  const canFinish = canFinishWorkout(watchedExercises, allExercises);
+  const template =
+    currentWorkout.templateId != null
+      ? templates.find((t) => t.id === currentWorkout.templateId)
+      : undefined;
+
   return (
-    <div className="flex flex-col h-full min-h-0">
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       <header className="shrink-0 mb-4">
         <h1 className="text-2xl font-semibold text-brand-dark mb-1">
           {t("workout_title")}
@@ -136,14 +311,31 @@ export function Workout() {
           {t("workout_startedAt")}{" "}
           {new Date(currentWorkout.startedAt).toLocaleString()}.
         </p>
+        {template && (
+          <p className="text-brand-text-muted text-sm mt-0.5">
+            {t("workout_templateLabel")}: {template.name}
+          </p>
+        )}
       </header>
 
-      <div className="flex-1 min-h-0 overflow-y-auto rounded-lg border border-brand-border bg-brand-bg-soft p-4">
-        <div className="space-y-6">
+      <div
+        className={cn(
+          "flex-1 min-h-0 min-w-0 relative overflow-hidden scroll-fade-bottom scroll-fade-top",
+          atBottom && "at-bottom",
+          atTop && "at-top",
+        )}
+      >
+        <div
+          ref={scrollRef}
+          className="h-full overflow-y-auto min-h-0"
+          onScroll={checkScroll}
+        >
+          <div className="rounded-lg border border-brand-border bg-brand-bg-soft p-4 mb-4">
+            <div className="space-y-6">
           {exerciseFields.map((field, index) => {
             const exerciseUniqueName =
               watchedExercises?.[index]?.exerciseUniqueName ?? "";
-            const exercise = exercises.find(
+            const exercise = allExercises.find(
               (e) => e.unique_name === exerciseUniqueName,
             );
             const sets = watchedExercises?.[index]?.sets ?? [];
@@ -262,7 +454,7 @@ export function Workout() {
                     <button
                       type="button"
                       disabled={
-                        !canAddSet(sets as SetValues[], exerciseUniqueName)
+                        !canAddSet(allExercises, sets as SetValues[], exerciseUniqueName)
                       }
                       onClick={() => {
                         const nextSet = defaultSet();
@@ -276,9 +468,9 @@ export function Workout() {
                       }}
                       className={cn(
                         "text-sm rounded px-2 py-1 border transition-colors",
-                        canAddSet(sets as SetValues[], exerciseUniqueName)
+                        canAddSet(allExercises, sets as SetValues[], exerciseUniqueName)
                           ? "border-brand-primary text-brand-primary hover:bg-brand-primary/10"
-                          : "border-brand-border text-brand-text-muted cursor-not-allowed",
+                          : "border-brand-border bg-brand-code-bg text-brand-text-muted cursor-not-allowed",
                       )}
                     >
                       {t("workout_addSet")}
@@ -302,13 +494,21 @@ export function Workout() {
             + {t("workout_addExercise")}
           </button>
         </div>
+          </div>
+        </div>
       </div>
 
       <footer className="shrink-0 flex gap-3 mt-4 pt-4 border-t border-brand-border">
         <button
           type="button"
           onClick={onFinish}
-          className="px-4 py-2 rounded-lg bg-brand-primary text-brand-bg font-medium hover:bg-brand-primary-hover transition-colors duration-300"
+          disabled={!canFinish}
+          className={cn(
+            "px-4 py-2 rounded-lg font-medium transition-colors duration-300",
+            canFinish
+              ? "bg-brand-primary text-brand-bg hover:bg-brand-primary-hover"
+              : "bg-brand-code-bg text-brand-text-muted cursor-not-allowed",
+          )}
         >
           {t("workout_finish")}
         </button>
@@ -356,6 +556,66 @@ export function Workout() {
         onCancel={() => setRemoveSetTarget(null)}
         variant="danger"
       />
+      {templateSaveModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="template-save-modal-title"
+        >
+          <div
+            className="absolute inset-0 bg-black/60"
+            aria-hidden="true"
+            onClick={() => {
+              appendWorkout(templateSaveModal.stored);
+              endWorkout();
+              setTemplateSaveModal(null);
+              navigate(routes.workout, { state: { tab: "completed" } });
+            }}
+          />
+          <div className="relative w-full max-w-md rounded-xl border border-brand-border bg-brand-bg-soft p-6 shadow-lg">
+            <h2
+              id="template-save-modal-title"
+              className="text-lg font-semibold text-brand-dark mb-2"
+            >
+              {t("workout_templateSaveModalTitle")}
+            </h2>
+            <p className="text-brand-text-muted text-sm mb-6">
+              {t("workout_templateSaveModalMessage")}
+            </p>
+            <div className="flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={handleTemplateSaveUpdate}
+                className="w-full rounded-lg bg-brand-primary text-brand-bg px-4 py-2 text-sm font-medium hover:bg-brand-primary-hover transition-colors"
+              >
+                {t("workout_templateSaveUpdate")}
+              </button>
+              <button
+                type="button"
+                onClick={handleTemplateSaveNew}
+                className="w-full rounded-lg border border-brand-border text-brand-text px-4 py-2 text-sm font-medium hover:bg-brand-bg transition-colors"
+              >
+                {t("workout_templateSaveNew")}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (templateSaveModal) {
+                    appendWorkout(templateSaveModal.stored);
+                    endWorkout();
+                    setTemplateSaveModal(null);
+                    navigate(routes.workout, { state: { tab: "completed" } });
+                  }
+                }}
+                className="w-full rounded-lg border border-brand-border text-brand-text-muted px-4 py-2 text-sm font-medium hover:bg-brand-bg transition-colors"
+              >
+                {t("workout_templateSaveFinishOnly")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

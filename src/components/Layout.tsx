@@ -3,8 +3,9 @@ import { useEffect } from "react";
 import {
   LayoutDashboard,
   Dumbbell,
-  History,
+  ListPlus,
   Download,
+  User,
   Settings,
 } from "lucide-react";
 import { routes } from "../routes";
@@ -16,8 +17,9 @@ import { cn } from "../lib/utils";
 const navIcons: Record<string, typeof LayoutDashboard> = {
   [routes.dashboard]: LayoutDashboard,
   [routes.workout]: Dumbbell,
-  [routes.history]: History,
+  [routes.library]: ListPlus,
   [routes.install]: Download,
+  [routes.user]: User,
   [routes.settings]: Settings,
 };
 
@@ -31,7 +33,7 @@ export function Layout() {
   }, [location.pathname, t]);
 
   return (
-    <div className={cn("flex min-h-screen bg-brand-bg py-6 pl-6 pr-6 gap-8")}>
+    <div className={cn("flex h-screen bg-brand-bg py-6 pl-6 pr-6 gap-8 overflow-hidden")}>
       <aside
         className={cn(
           "w-52 shrink-0 rounded-xl bg-brand-bg-soft border border-brand-border flex flex-col shadow-sm overflow-hidden"
@@ -84,11 +86,9 @@ export function Layout() {
         </nav>
       </aside>
 
-      <main className={cn("flex-1 min-w-0 flex flex-col min-h-0")}>
-        <div className={cn("w-full p-8 flex flex-col flex-1 min-h-0 overflow-hidden")}>
-          <div className={cn("flex-1 min-h-0 flex flex-col")}>
-            <Outlet />
-          </div>
+      <main className={cn("flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden")}>
+        <div className={cn("w-full p-8 flex flex-col flex-1 min-h-0 overflow-y-auto")}>
+          <Outlet />
         </div>
       </main>
     </div>

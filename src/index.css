@@ -34,4 +34,71 @@
     -moz-appearance: textfield;
     appearance: textfield;
   }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--brand-border) var(--brand-code-bg);
+  }
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  *::-webkit-scrollbar-track {
+    background: var(--brand-code-bg);
+    border-radius: 4px;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: var(--brand-border);
+    border-radius: 4px;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background: var(--brand-text-muted);
+  }
+}
+
+@layer utilities {
+  .scroll-fade-bottom {
+    position: relative;
+  }
+  .scroll-fade-bottom::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 8px;
+    height: 2.5rem;
+    background: linear-gradient(
+      to top,
+      var(--brand-bg) 0%,
+      rgba(13, 17, 23, 0.75) 50%,
+      transparent 100%
+    );
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+  .scroll-fade-bottom.at-bottom::after {
+    opacity: 0;
+  }
+  .scroll-fade-top {
+    position: relative;
+  }
+  .scroll-fade-top::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 8px;
+    height: 2.5rem;
+    background: linear-gradient(
+      to bottom,
+      var(--brand-bg) 0%,
+      rgba(13, 17, 23, 0.75) 50%,
+      transparent 100%
+    );
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    z-index: 1;
+  }
+  .scroll-fade-top.at-top::before {
+    opacity: 0;
+  }
 }

@@ -1,10 +1,12 @@
 import SelectLib from "react-select";
 import { cn } from "../lib/utils";
 
-const selectStyles = {
+export const selectStyles = {
   control: (base: Record<string, unknown>, state: { isFocused: boolean }) => ({
     ...base,
-    minHeight: 40,
+    height: 42,
+    minHeight: 42,
+    padding: "0 10px",
     cursor: "pointer",
     backgroundColor: "var(--brand-bg)",
     borderColor: state.isFocused
@@ -13,6 +15,12 @@ const selectStyles = {
     borderRadius: 8,
     boxShadow: "none",
     "&:hover": { borderColor: "var(--brand-primary)" },
+  }),
+  valueContainer: (base: Record<string, unknown>) => ({
+    ...base,
+    padding: 0,
+    maxHeight: 42,
+    overflowY: "auto" as const,
   }),
   singleValue: (base: Record<string, unknown>) => ({
     ...base,
@@ -31,7 +39,12 @@ const selectStyles = {
     backgroundColor: "var(--brand-bg-soft)",
     border: "1px solid var(--brand-border)",
     borderRadius: 8,
-    overflow: "hidden",
+    overflow: "hidden" as const,
+    padding: 0,
+  }),
+  menuList: (base: Record<string, unknown>) => ({
+    ...base,
+    padding: 0,
   }),
   option: (
     base: Record<string, unknown>,
@@ -68,7 +81,7 @@ export function Select({
   const selected = options.find((o) => o.value === value) ?? null;
 
   return (
-    <div className={cn("min-w-[14rem]", className)}>
+    <div className={cn("min-w-[18rem]", className)}>
       <SelectLib<Option>
         value={selected}
         onChange={(o) => onChange(o?.value ?? "")}

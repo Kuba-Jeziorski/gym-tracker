@@ -11,8 +11,10 @@ export function Settings() {
     <div>
       <h1 className="text-2xl font-semibold text-brand-dark mb-2">{t('settings_title')}</h1>
       <p className="text-brand-text-muted mb-8">{t('settings_description')}</p>
+
       <h2 className="text-lg font-medium text-brand-dark mb-3">{t('settings_languageHeading')}</h2>
       <LanguageSwitcher />
+
       <h2 className="text-lg font-medium text-brand-dark mt-8 mb-3">{t('settings_weightUnit')}</h2>
       <div className="flex gap-2">
         <button

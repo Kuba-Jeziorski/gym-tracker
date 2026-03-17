@@ -294,3 +294,19 @@ export const exercises: Exercise[] = [
     time: true,
   },
 ]
+
+export const MUSCLE_GROUPS = [
+  'arms',
+  'back',
+  'biceps',
+  'calves',
+  'chest',
+  'core',
+  'forearms',
+  'glutes',
+  'hamstrings',
+  'legs',
+  'quadriceps',
+  'shoulders',
+  'triceps',
+] as const

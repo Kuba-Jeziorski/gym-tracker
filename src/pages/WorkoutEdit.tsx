@@ -5,7 +5,7 @@ import { CircleMinus } from "lucide-react";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useWeightUnit } from "../contexts/WeightUnitContext";
 import { useCompletedWorkouts } from "../contexts/CompletedWorkoutsContext";
-import { exercises } from "../data/exercises";
+import { useAllExercises } from "../contexts/CustomExercisesContext";
 import type { StoredWorkout } from "../data/workoutStorage";
 import {
   storedKgToDisplay,
@@ -41,7 +41,11 @@ function isEmptySet(s: SetValues): boolean {
   );
 }
 
-function canAddSet(sets: SetValues[], exerciseUniqueName: string): boolean {
+function canAddSet(
+  exercises: { weight?: boolean; reps?: boolean; time?: boolean; unique_name: string }[],
+  sets: SetValues[],
+  exerciseUniqueName: string,
+): boolean {
   if (sets.length === 0) return true;
   const exercise = exercises.find((e) => e.unique_name === exerciseUniqueName);
   if (!exercise) return false;
@@ -60,6 +64,7 @@ export function WorkoutEdit() {
   const { workouts, updateWorkout } = useCompletedWorkouts();
 
   const workout = id ? workouts.find((w) => w.id === id) : null;
+  const allExercises = useAllExercises();
   const [removeSetTarget, setRemoveSetTarget] = useState<{
     exerciseIndex: number;
     setIndex: number;
@@ -100,9 +105,9 @@ export function WorkoutEdit() {
     reset({ exercises: formExercises });
   }, [workout, weightUnit, reset]);
 
-  const exerciseSelectOptions = exercises.map((ex) => ({
+  const exerciseSelectOptions = allExercises.map((ex) => ({
     value: ex.unique_name,
-    label: t(ex.unique_name),
+    label: ex.unique_name.startsWith("custom_") ? ex.name : t(ex.unique_name),
   }));
 
   const onSave = handleSubmit((data) => {
@@ -129,7 +134,8 @@ export function WorkoutEdit() {
     return (
       <div>
         <Link
-          to={routes.history}
+          to={routes.workout}
+          state={{ tab: "completed" }}
           className="text-brand-accent hover:text-brand-primary-hover text-sm mb-4 inline-block"
         >
           ← {t("workoutDetail_back")}
@@ -145,7 +151,8 @@ export function WorkoutEdit() {
     return (
       <div>
         <Link
-          to={routes.history}
+          to={routes.workout}
+          state={{ tab: "completed" }}
           className="text-brand-accent hover:text-brand-primary-hover text-sm mb-4 inline-block"
         >
           ← {t("workoutDetail_back")}
@@ -156,8 +163,8 @@ export function WorkoutEdit() {
   }
 
   return (
-    <div className="flex flex-col h-full min-h-0">
-      <header className="shrink-0 mb-4">
+    <div>
+      <header className="mb-4">
         <Link
           to={routes.workoutDetail(id)}
           className="text-brand-accent hover:text-brand-primary-hover text-sm mb-2 inline-block"
@@ -174,12 +181,12 @@ export function WorkoutEdit() {
         </p>
       </header>
 
-      <div className="flex-1 min-h-0 overflow-y-auto rounded-lg border border-brand-border bg-brand-bg-soft p-4">
+      <div className="rounded-lg border border-brand-border bg-brand-bg-soft p-4 mb-4">
         <form id="workout-edit-form" onSubmit={onSave} className="space-y-6">
           {exerciseFields.map((field, index) => {
             const exerciseUniqueName =
               watchedExercises?.[index]?.exerciseUniqueName ?? "";
-            const exercise = exercises.find(
+            const exercise = allExercises.find(
               (e) => e.unique_name === exerciseUniqueName,
             );
             const sets = watchedExercises?.[index]?.sets ?? [];
@@ -298,7 +305,7 @@ export function WorkoutEdit() {
                     <button
                       type="button"
                       disabled={
-                        !canAddSet(sets as SetValues[], exerciseUniqueName)
+                        !canAddSet(allExercises, sets as SetValues[], exerciseUniqueName)
                       }
                       onClick={() => {
                         const all = watch("exercises") ?? [];
@@ -314,9 +321,9 @@ export function WorkoutEdit() {
                       }}
                       className={cn(
                         "text-sm rounded px-2 py-1 border transition-colors",
-                        canAddSet(sets as SetValues[], exerciseUniqueName)
+                        canAddSet(allExercises, sets as SetValues[], exerciseUniqueName)
                           ? "border-brand-primary text-brand-primary hover:bg-brand-primary/10"
-                          : "border-brand-border text-brand-text-muted cursor-not-allowed",
+                          : "border-brand-border bg-brand-code-bg text-brand-text-muted cursor-not-allowed",
                       )}
                     >
                       {t("workout_addSet")}
@@ -342,7 +349,7 @@ export function WorkoutEdit() {
         </form>
       </div>
 
-      <footer className="shrink-0 flex gap-3 mt-4 pt-4 border-t border-brand-border">
+      <footer className="flex gap-3 mt-4 pt-4 border-t border-brand-border">
         <button
           type="submit"
           form="workout-edit-form"

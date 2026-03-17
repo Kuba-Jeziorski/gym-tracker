@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useWeightUnit } from "../contexts/WeightUnitContext";
 import { useCompletedWorkouts } from "../contexts/CompletedWorkoutsContext";
+import { useAllExercises } from "../contexts/CustomExercisesContext";
 import { routes } from "../routes";
 import type { StoredWorkoutExercise, StoredSet } from "../data/workoutStorage";
 import { ConfirmModal } from "../components/ConfirmModal";
@@ -10,10 +11,12 @@ import { formatStoredWeightForDisplay } from "../helpers/weightConversion";
 
 function ExerciseBlock({
   exercise,
+  displayName,
   t,
   weightUnit,
 }: {
   exercise: StoredWorkoutExercise;
+  displayName: string;
   t: (key: string) => string;
   weightUnit: "kg" | "lb";
 }) {
@@ -25,7 +28,7 @@ function ExerciseBlock({
   return (
     <div className="rounded-lg border border-brand-border bg-brand-bg p-4">
       <h3 className="text-base font-medium text-brand-dark mb-3">
-        {exercise.exerciseUniqueName ? t(exercise.exerciseUniqueName) : "—"}
+        {displayName || "—"}
       </h3>
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-left">
@@ -81,7 +84,15 @@ export function WorkoutDetail() {
   const { t } = useLanguage();
   const { weightUnit } = useWeightUnit();
   const { workouts, removeWorkout } = useCompletedWorkouts();
+  const allExercises = useAllExercises();
   const [removeModalOpen, setRemoveModalOpen] = useState(false);
+
+  const getExerciseDisplayName = (uniqueName: string) => {
+    const ex = allExercises.find((e) => e.unique_name === uniqueName);
+    if (ex)
+      return ex.unique_name.startsWith("custom_") ? ex.name : t(ex.unique_name);
+    return t(uniqueName);
+  };
 
   const workout = id ? workouts.find((w) => w.id === id) : null;
 
@@ -89,7 +100,7 @@ export function WorkoutDetail() {
     if (id) {
       removeWorkout(id);
       setRemoveModalOpen(false);
-      navigate(routes.history);
+      navigate(routes.workout, { state: { tab: "completed" } });
     }
   };
 
@@ -97,7 +108,8 @@ export function WorkoutDetail() {
     return (
       <div>
         <Link
-          to={routes.history}
+          to={routes.workout}
+          state={{ tab: "completed" }}
           className="text-brand-accent hover:text-brand-primary-hover text-sm mb-4 inline-block"
         >
           ← {t("workoutDetail_back")}
@@ -113,7 +125,8 @@ export function WorkoutDetail() {
     return (
       <div>
         <Link
-          to={routes.history}
+          to={routes.workout}
+          state={{ tab: "completed" }}
           className="text-brand-accent hover:text-brand-primary-hover text-sm mb-4 inline-block"
         >
           ← {t("workoutDetail_back")}
@@ -148,7 +161,8 @@ export function WorkoutDetail() {
   return (
     <div>
       <Link
-        to={routes.history}
+        to={routes.workout}
+          state={{ tab: "completed" }}
         className="text-brand-accent hover:text-brand-primary-hover text-sm mb-4 inline-block"
       >
         ← {t("workoutDetail_back")}
@@ -194,6 +208,7 @@ export function WorkoutDetail() {
             <ExerciseBlock
               key={`${exercise.exerciseUniqueName}-${index}`}
               exercise={exercise}
+              displayName={getExerciseDisplayName(exercise.exerciseUniqueName)}
               t={t}
               weightUnit={weightUnit}
             />
