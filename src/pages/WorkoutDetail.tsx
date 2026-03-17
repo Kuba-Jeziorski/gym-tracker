@@ -162,7 +162,7 @@ export function WorkoutDetail() {
     <div>
       <Link
         to={routes.workout}
-          state={{ tab: "completed" }}
+        state={{ tab: "completed" }}
         className="text-brand-accent hover:text-brand-primary-hover text-sm mb-4 inline-block"
       >
         ← {t("workoutDetail_back")}
@@ -201,7 +201,7 @@ export function WorkoutDetail() {
         onCancel={() => setRemoveModalOpen(false)}
         variant="danger"
       />
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4">
         {workout.exercises
           .filter((ex) => ex.exerciseUniqueName || (ex.sets?.length ?? 0) > 0)
           .map((exercise, index) => (
