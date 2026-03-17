@@ -1,14 +1,19 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { useParams, Link, useNavigate } from "react-router-dom";
+import { CircleMinus } from "lucide-react";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useWeightUnit } from "../contexts/WeightUnitContext";
 import { useCompletedWorkouts } from "../contexts/CompletedWorkoutsContext";
 import { exercises } from "../data/exercises";
 import type { StoredWorkout } from "../data/workoutStorage";
-import { storedKgToDisplay, inputWeightToKg } from "../helpers/weightConversion";
+import {
+  storedKgToDisplay,
+  inputWeightToKg,
+} from "../helpers/weightConversion";
 import { routes } from "../routes";
 import { Select } from "../components/Select";
+import { ConfirmModal } from "../components/ConfirmModal";
 import { cn } from "../lib/utils";
 
 type SetValues = {
@@ -27,6 +32,14 @@ type WorkoutFormValues = {
 };
 
 const defaultSet = (): SetValues => ({ weight: "", reps: "", time: "" });
+
+function isEmptySet(s: SetValues): boolean {
+  return (
+    !(s.weight?.trim() ?? "") &&
+    !(s.reps?.trim() ?? "") &&
+    !(s.time?.trim() ?? "")
+  );
+}
 
 function canAddSet(sets: SetValues[], exerciseUniqueName: string): boolean {
   if (sets.length === 0) return true;
@@ -47,6 +60,10 @@ export function WorkoutEdit() {
   const { workouts, updateWorkout } = useCompletedWorkouts();
 
   const workout = id ? workouts.find((w) => w.id === id) : null;
+  const [removeSetTarget, setRemoveSetTarget] = useState<{
+    exerciseIndex: number;
+    setIndex: number;
+  } | null>(null);
 
   const { control, register, watch, handleSubmit, setValue, reset } =
     useForm<WorkoutFormValues>({
@@ -92,14 +109,17 @@ export function WorkoutEdit() {
     if (!id || !workout) return;
     const updated: StoredWorkout = {
       ...workout,
-      exercises: data.exercises.map((ex) => ({
-        exerciseUniqueName: ex.exerciseUniqueName,
-        sets: (ex.sets ?? []).map((s) => ({
+      exercises: data.exercises.map((ex) => {
+        const mapped = (ex.sets ?? []).map((s) => ({
           weight: inputWeightToKg(s.weight ?? "", weightUnit),
           reps: s.reps ?? "",
           time: s.time ?? "",
-        })),
-      })),
+        }));
+        return {
+          exerciseUniqueName: ex.exerciseUniqueName,
+          sets: mapped.filter((s) => !isEmptySet(s)),
+        };
+      }),
     };
     updateWorkout(id, updated);
     navigate(routes.workoutDetail(id));
@@ -114,7 +134,9 @@ export function WorkoutEdit() {
         >
           ← {t("workoutDetail_back")}
         </Link>
-        <p className="text-brand-text-muted">{t("workoutDetail_description")}</p>
+        <p className="text-brand-text-muted">
+          {t("workoutDetail_description")}
+        </p>
       </div>
     );
   }
@@ -153,11 +175,7 @@ export function WorkoutEdit() {
       </header>
 
       <div className="flex-1 min-h-0 overflow-y-auto rounded-lg border border-brand-border bg-brand-bg-soft p-4">
-        <form
-          id="workout-edit-form"
-          onSubmit={onSave}
-          className="space-y-6"
-        >
+        <form id="workout-edit-form" onSubmit={onSave} className="space-y-6">
           {exerciseFields.map((field, index) => {
             const exerciseUniqueName =
               watchedExercises?.[index]?.exerciseUniqueName ?? "";
@@ -215,6 +233,20 @@ export function WorkoutEdit() {
                           key={setIndex}
                           className="flex flex-wrap items-center gap-2 gap-y-2 text-sm"
                         >
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setRemoveSetTarget({ exerciseIndex: index, setIndex })
+                            }
+                            className={cn(
+                              "shrink-0 rounded p-1 transition-colors",
+                              "text-brand-text-muted hover:text-red-400 active:text-red-400 focus-visible:text-red-400 focus-visible:outline-none",
+                            )}
+                            title={t("workout_removeSet")}
+                            aria-label={t("workout_removeSet")}
+                          >
+                            <CircleMinus className="size-5" />
+                          </button>
                           {exercise.weight && (
                             <div className="flex items-center gap-1.5 mr-5">
                               <input
@@ -226,9 +258,7 @@ export function WorkoutEdit() {
                                 className="min-w-[8rem] w-28 rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder"
                               />
                               <span className="text-brand-text-muted text-sm shrink-0">
-                                {t(
-                                  weightUnit === "kg" ? "unit_kg" : "unit_lb",
-                                )}
+                                {t(weightUnit === "kg" ? "unit_kg" : "unit_lb")}
                               </span>
                             </div>
                           )}
@@ -240,7 +270,7 @@ export function WorkoutEdit() {
                                 {...register(
                                   `exercises.${index}.sets.${setIndex}.reps` as const,
                                 )}
-                                className="min-w-[4rem] w-24 rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder"
+                                className="min-w-[8rem] w-24 rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder"
                               />
                               <span className="text-brand-text-muted text-sm shrink-0">
                                 {t("workout_reps")}
@@ -274,7 +304,10 @@ export function WorkoutEdit() {
                         const all = watch("exercises") ?? [];
                         const updated = all.map((ex, i) =>
                           i === index
-                            ? { ...ex, sets: [...(ex.sets ?? []), defaultSet()] }
+                            ? {
+                                ...ex,
+                                sets: [...(ex.sets ?? []), defaultSet()],
+                              }
                             : ex,
                         );
                         setValue("exercises", updated);
@@ -324,6 +357,32 @@ export function WorkoutEdit() {
           {t("workoutEdit_cancel")}
         </Link>
       </footer>
+      <ConfirmModal
+        open={removeSetTarget !== null}
+        title={t("workout_removeSetConfirmTitle")}
+        message={t("workout_removeSetConfirmMessage")}
+        confirmLabel={t("common_yes")}
+        cancelLabel={t("common_no")}
+        onConfirm={() => {
+          if (removeSetTarget === null) return;
+          const { exerciseIndex, setIndex } = removeSetTarget;
+          const all = watch("exercises") ?? [];
+          const currentSets = all[exerciseIndex]?.sets ?? [];
+          const newSets = currentSets.filter((_, i) => i !== setIndex);
+          const updated = all.map((ex, i) =>
+            i === exerciseIndex
+              ? {
+                  ...ex,
+                  sets: newSets.length > 0 ? newSets : [defaultSet()],
+                }
+              : ex,
+          );
+          setValue("exercises", updated);
+          setRemoveSetTarget(null);
+        }}
+        onCancel={() => setRemoveSetTarget(null)}
+        variant="danger"
+      />
     </div>
   );
 }
