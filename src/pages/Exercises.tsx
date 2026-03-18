@@ -1,6 +1,8 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
+import { Link } from "react-router-dom";
 import SelectLib from "react-select";
 import { useLanguage } from "../contexts/LanguageContext";
+import { routes } from "../routes";
 import { useCustomExercises } from "../contexts/CustomExercisesContext";
 import type { Exercise } from "../data/exercises";
 import { MUSCLE_GROUPS } from "../data/exercises";
@@ -295,9 +297,17 @@ export function Exercises() {
               >
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-medium text-brand-dark">
+                    <Link
+                      to={routes.exerciseHistory(ex.unique_name)}
+                      title={t("exercises_nameLinkTitle")}
+                      className={cn(
+                        "font-medium text-brand-dark hover:text-brand-primary",
+                        "underline-offset-2 hover:underline decoration-brand-primary/80",
+                        "transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary rounded",
+                      )}
+                    >
                       {getExerciseDisplayName(ex, t)}
-                    </span>
+                    </Link>
                     <span
                       className={cn(
                         "text-xs px-2 py-0.5 rounded",

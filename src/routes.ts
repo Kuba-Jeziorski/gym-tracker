@@ -8,6 +8,9 @@ export const routes = {
   workoutDetailEdit: (id: string) => `/history/${id}/edit`,
   /** Exercises + Templates (Library) page. */
   library: '/exercises',
+  /** All logged sets for one exercise (unique_name URL-encoded). */
+  exerciseHistory: (uniqueName: string) =>
+    `/exercises/history/${encodeURIComponent(uniqueName)}`,
   install: '/install',
   user: '/user',
   settings: '/settings',

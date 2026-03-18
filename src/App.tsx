@@ -12,6 +12,9 @@ const WorkoutDetail = lazy(() => import('./pages/WorkoutDetail').then((m) => ({ 
 const WorkoutEdit = lazy(() => import('./pages/WorkoutEdit').then((m) => ({ default: m.WorkoutEdit })))
 const Install = lazy(() => import('./pages/Install').then((m) => ({ default: m.Install })))
 const Library = lazy(() => import('./pages/Library').then((m) => ({ default: m.Library })))
+const ExerciseHistory = lazy(() =>
+  import('./pages/ExerciseHistory').then((m) => ({ default: m.ExerciseHistory })),
+)
 const User = lazy(() => import('./pages/User').then((m) => ({ default: m.User })))
 const Settings = lazy(() => import('./pages/Settings').then((m) => ({ default: m.Settings })))
 const NotFound = lazy(() => import('./pages/NotFound').then((m) => ({ default: m.NotFound })))
@@ -42,6 +45,7 @@ function App() {
               <Route path="workout" element={<MyWorkout />} />
               <Route path="history/:id" element={<WorkoutDetail />} />
               <Route path="history/:id/edit" element={<WorkoutEdit />} />
+              <Route path="exercises/history/:exerciseKey" element={<ExerciseHistory />} />
               <Route path="exercises" element={<Library />} />
               <Route path="install" element={<Install />} />
               <Route path="user" element={<User />} />
