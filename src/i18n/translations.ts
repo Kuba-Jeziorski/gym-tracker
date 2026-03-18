@@ -136,7 +136,18 @@ export const translations: Record<Locale, Record<string, string>> = {
       "Adjust if you saved the workout on a different day than you trained. If the new time is earlier than when the app session started, the start time is moved back so both stay valid.",
     install_title: "Install app",
     install_description:
-      "How to add Gym Tracker to your home screen: Android (default browser), iOS (Safari, Chrome).",
+      "Add Gym Tracker to your home screen for quick access like a native app (PWA). Instructions below by browser — more browsers coming soon.",
+    install_chrome_heading: "Chrome",
+    install_chrome_intro:
+      "On iPhone or iPad, open Gym Tracker in the Chrome app and follow these steps.",
+    install_chrome_step1:
+      "Tap the menu button to the right of the address bar (share / more). On the screen that opens, tap Downloads — the circle with a down arrow (Polish: Pobrane).",
+    install_chrome_step2:
+      "When the next panel opens, find the row of circular action buttons at the top and tap See more (Polish: Pokaż więcej).",
+    install_chrome_step3:
+      "In the second list of options, tap Add to Home Screen (Polish: Do ekranu głównego — square with a plus). Confirm to place the app shortcut on your home screen.",
+    install_chrome_figure1: "Chrome menu after opening actions next to the URL.",
+    install_chrome_figure2: "Expanded menu with Add to Home Screen.",
     user_title: "Profile",
     user_description: "Your personal info, stats, and personal bests.",
     user_profileHeading: "Personal info",
@@ -380,7 +391,18 @@ export const translations: Record<Locale, Record<string, string>> = {
       "Zmień, jeśli zapisałeś trening w innym dniu. Jeśli nowy czas jest wcześniejszy niż start sesji w aplikacji, czas startu zostanie cofnięty, żeby dane były spójne.",
     install_title: "Zainstaluj aplikację",
     install_description:
-      "Jak dodać Gym Tracker na ekran główny: Android (domyślna przeglądarka), iOS (Safari, Chrome).",
+      "Dodaj Gym Tracker na ekran główny, aby mieć szybki dostęp jak w aplikacji (PWA). Poniżej instrukcje według przeglądarki — wkrótce kolejne.",
+    install_chrome_heading: "Chrome",
+    install_chrome_intro:
+      "Na iPhonie lub iPadzie otwórz Gym Tracker w aplikacji Chrome i wykonaj kolejne kroki.",
+    install_chrome_step1:
+      "Stuknij przycisk menu po prawej od paska adresu (udostępnianie / więcej). Na ekranie, który się pojawi, wybierz Pobrane — ikona koła ze strzałką w dół.",
+    install_chrome_step2:
+      "Gdy otworzy się kolejny panel, znajdź rząd okrągłych przycisków u góry i wybierz Pokaż więcej.",
+    install_chrome_step3:
+      "W drugiej liście opcji wybierz Do ekranu głównego (kwadrat z plusem). Potwierdź, aby dodać skrót aplikacji na pulpit.",
+    install_chrome_figure1: "Menu Chrome po otwarciu akcji obok adresu.",
+    install_chrome_figure2: "Rozszerzone menu z opcją Do ekranu głównego.",
     user_title: "Profil",
     user_description: "Twoje dane, statystyki i rekordy osobiste.",
     user_profileHeading: "Dane osobowe",
