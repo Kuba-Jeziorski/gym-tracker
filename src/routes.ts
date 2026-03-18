@@ -1,4 +1,5 @@
 export const routes = {
+  auth: '/login',
   dashboard: '/',
   workout: '/workout',
   /** Used for workout detail/edit URLs only (list is under workout tab). */

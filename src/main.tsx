@@ -1,10 +1,9 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { AuthProvider } from './contexts/AuthContext'
 import { CurrentWorkoutProvider } from './contexts/CurrentWorkoutContext'
-import { LanguageProvider } from './contexts/LanguageContext'
-import { WeightUnitProvider } from './contexts/WeightUnitContext'
-import { UserProfileProvider } from './contexts/UserProfileContext'
+import { AccountPreferencesProvider } from './contexts/AccountPreferencesContext'
 import { CompletedWorkoutsProvider } from './contexts/CompletedWorkoutsContext'
 import { CustomExercisesProvider } from './contexts/CustomExercisesContext'
 import { WorkoutTemplatesProvider } from './contexts/WorkoutTemplatesContext'
@@ -24,9 +23,8 @@ if (!container) {
 createRoot(container).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <LanguageProvider>
-        <WeightUnitProvider>
-          <UserProfileProvider>
+      <AuthProvider>
+        <AccountPreferencesProvider>
           <CompletedWorkoutsProvider>
             <CustomExercisesProvider>
               <WorkoutTemplatesProvider>
@@ -36,9 +34,8 @@ createRoot(container).render(
               </WorkoutTemplatesProvider>
             </CustomExercisesProvider>
           </CompletedWorkoutsProvider>
-          </UserProfileProvider>
-        </WeightUnitProvider>
-      </LanguageProvider>
+        </AccountPreferencesProvider>
+      </AuthProvider>
     </QueryClientProvider>
   </StrictMode>,
 )

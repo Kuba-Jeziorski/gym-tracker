@@ -1,13 +1,60 @@
+import { useEffect, useRef, useState } from 'react'
 import { useLanguage } from '../contexts/LanguageContext'
+import { useAuth } from '../contexts/AuthContext'
 import { useWeightUnit } from '../contexts/WeightUnitContext'
 import { useUserProfile } from '../contexts/UserProfileContext'
 import { kgToLb, lbToKg } from '../helpers/weightConversion'
 import { cn } from '../lib/utils'
 
+type SaveUi = 'idle' | 'saving' | 'success' | 'error'
+
 export function User() {
   const { t } = useLanguage()
+  const { signOut } = useAuth()
   const { weightUnit } = useWeightUnit()
-  const { profile, setName, setWeightKg, setHeightCm, setGender } = useUserProfile()
+  const {
+    profile,
+    setName,
+    setWeightKg,
+    setHeightCm,
+    setGender,
+    refreshProfileFromServer,
+    saveProfileChanges,
+  } = useUserProfile()
+
+  const [saveUi, setSaveUi] = useState<SaveUi>('idle')
+  const [saveError, setSaveError] = useState('')
+  const saveSuccessTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    void refreshProfileFromServer()
+  }, [refreshProfileFromServer])
+
+  useEffect(() => {
+    return () => {
+      if (saveSuccessTimer.current) clearTimeout(saveSuccessTimer.current)
+    }
+  }, [])
+
+  const handleSaveChanges = async () => {
+    if (saveSuccessTimer.current) {
+      clearTimeout(saveSuccessTimer.current)
+      saveSuccessTimer.current = null
+    }
+    setSaveUi('saving')
+    setSaveError('')
+    const { ok, error } = await saveProfileChanges()
+    if (ok) {
+      setSaveUi('success')
+      saveSuccessTimer.current = setTimeout(() => {
+        setSaveUi('idle')
+        saveSuccessTimer.current = null
+      }, 2500)
+    } else {
+      setSaveUi('error')
+      setSaveError(error ?? t('user_saveFailed'))
+    }
+  }
 
   const weightDisplayValue =
     profile.weightKg != null
@@ -138,6 +185,32 @@ export function User() {
               </div>
             </div>
           </div>
+
+          <div className="flex flex-col gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => void handleSaveChanges()}
+              disabled={saveUi === 'saving'}
+              className={cn(
+                'w-fit rounded-lg px-5 py-2.5 text-sm font-medium transition-colors',
+                'bg-brand-primary text-brand-bg hover:bg-brand-primary-hover',
+                'focus:outline-none focus:ring-2 focus:ring-brand-primary focus:ring-offset-2 focus:ring-offset-brand-bg-soft',
+                'disabled:opacity-60 disabled:pointer-events-none',
+              )}
+            >
+              {saveUi === 'saving' ? t('user_saving') : t('user_saveChanges')}
+            </button>
+            {saveUi === 'success' && (
+              <p className="text-sm text-brand-primary" role="status">
+                {t('user_saved')}
+              </p>
+            )}
+            {saveUi === 'error' && saveError && (
+              <p className="text-sm text-red-400 max-w-xl" role="alert">
+                {t('user_saveFailed')} {saveError}
+              </p>
+            )}
+          </div>
         </div>
       </section>
 
@@ -152,6 +225,7 @@ export function User() {
           </button>
           <button
             type="button"
+            onClick={() => signOut()}
             className="w-full rounded-lg border border-brand-border bg-brand-bg-soft px-4 py-2 text-sm font-medium text-brand-text hover:bg-brand-bg transition-colors"
           >
             {t('user_logout')}

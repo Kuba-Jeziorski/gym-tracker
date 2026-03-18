@@ -12,6 +12,8 @@ import { routes } from "../routes";
 import { navItems } from "../navConfig";
 import { getPageTitleKey } from "../helpers/getPageTitle";
 import { useLanguage } from "../contexts/LanguageContext";
+import { useProfileLoading } from "../contexts/AccountPreferencesContext";
+import { PageLoader } from "./PageLoader";
 import { cn } from "../lib/utils";
 
 const navIcons: Record<string, typeof LayoutDashboard> = {
@@ -26,11 +28,16 @@ const navIcons: Record<string, typeof LayoutDashboard> = {
 export function Layout() {
   const location = useLocation();
   const { t } = useLanguage();
+  const profileLoading = useProfileLoading();
 
   useEffect(() => {
     const titleKey = getPageTitleKey(location.pathname);
     document.title = `${t("appTitle")} - ${t(titleKey)}`;
   }, [location.pathname, t]);
+
+  if (profileLoading) {
+    return <PageLoader />;
+  }
 
   return (
     <div className={cn("flex h-screen bg-brand-bg py-6 pl-6 pr-6 gap-8 overflow-hidden")}>

@@ -137,6 +137,10 @@ export const translations: Record<Locale, Record<string, string>> = {
     user_stat_workoutsThisMonth: "This month",
     user_personalBestHeading: "Personal bests",
     user_personalBestEmpty: "Complete workouts with weight and reps to see personal bests here.",
+    user_saveChanges: "Save changes",
+    user_saving: "Saving…",
+    user_saved: "Saved",
+    user_saveFailed: "Could not save. Check the message below.",
     user_accountHeading: "Account",
     user_changePassword: "Change password",
     user_logout: "Log out",
@@ -168,6 +172,18 @@ export const translations: Record<Locale, Record<string, string>> = {
     settings_genderMale: "Man",
     settings_genderFemale: "Woman",
     unit_cm: "cm",
+    auth_subtitle: "Sign in or create an account to continue.",
+    auth_signIn: "Sign in",
+    auth_signUp: "Sign up",
+    auth_email: "Email",
+    auth_emailPlaceholder: "you@example.com",
+    auth_password: "Password",
+    auth_passwordPlaceholder: "••••••••",
+    auth_submitSignIn: "Sign in",
+    auth_submitSignUp: "Create account",
+    auth_error_missing: "Please enter email and password.",
+    auth_optional: "optional",
+    auth_success_signup: "Account created. Check your email to confirm, or sign in if already confirmed.",
     notFound_title: "404",
     notFound_message: "Page not found.",
     notFound_back: "Back to Dashboard",
@@ -341,6 +357,10 @@ export const translations: Record<Locale, Record<string, string>> = {
     user_stat_workoutsThisMonth: "W tym miesiącu",
     user_personalBestHeading: "Rekordy osobiste",
     user_personalBestEmpty: "Ukończ treningi z obciążeniem i powtórzeniami, aby zobaczyć rekordy.",
+    user_saveChanges: "Zapisz zmiany",
+    user_saving: "Zapisywanie…",
+    user_saved: "Zapisano",
+    user_saveFailed: "Nie udało się zapisać. Zobacz komunikat poniżej.",
     user_accountHeading: "Konto",
     user_changePassword: "Zmień hasło",
     user_logout: "Wyloguj",
@@ -372,6 +392,18 @@ export const translations: Record<Locale, Record<string, string>> = {
     settings_genderMale: "Mężczyzna",
     settings_genderFemale: "Kobieta",
     unit_cm: "cm",
+    auth_subtitle: "Zaloguj się lub utwórz konto, aby kontynuować.",
+    auth_signIn: "Zaloguj się",
+    auth_signUp: "Zarejestruj się",
+    auth_email: "E-mail",
+    auth_emailPlaceholder: "ty@example.com",
+    auth_password: "Hasło",
+    auth_passwordPlaceholder: "••••••••",
+    auth_submitSignIn: "Zaloguj się",
+    auth_submitSignUp: "Utwórz konto",
+    auth_error_missing: "Wpisz e-mail i hasło.",
+    auth_optional: "opcjonalnie",
+    auth_success_signup: "Konto utworzone. Sprawdź e-mail, aby potwierdzić, lub zaloguj się, jeśli już potwierdziłeś.",
     notFound_title: "404",
     notFound_message: "Strona nie została znaleziona.",
     notFound_back: "Powrót do pulpitu",
@@ -410,15 +442,3 @@ export const translations: Record<Locale, Record<string, string>> = {
     stationary_bike: "Rower stacjonarny",
   },
 };
-
-const STORAGE_KEY = "gym-tracker-locale";
-
-export function getStoredLocale(): Locale {
-  if (typeof window === "undefined") return "en";
-  const stored = localStorage.getItem(STORAGE_KEY) as Locale | null;
-  return stored === "pl" || stored === "en" ? stored : "en";
-}
-
-export function setStoredLocale(locale: Locale): void {
-  localStorage.setItem(STORAGE_KEY, locale);
-}
