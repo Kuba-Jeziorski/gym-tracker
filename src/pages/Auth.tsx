@@ -7,7 +7,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { lbToKg } from "../helpers/weightConversion";
 import { cn } from "../lib/utils";
 import { supabase } from "../services/supabaseClient";
-import { routes } from "../routes";
+// import { routes } from "../routes";
 
 type AuthTab = "signin" | "signup" | "reset";
 
