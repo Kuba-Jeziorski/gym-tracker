@@ -32,3 +32,6 @@ Thumbs.db
 .env
 .env.local
 .env.*.local
+
+# Local Supabase credentials (use .env + supabaseClient.ts in repo)
+src/services/supabase-config.ts
