@@ -61,11 +61,7 @@ function startedAtForCompletedAt(
 ): string {
   const completed = new Date(completedAtIso).getTime();
   const started = new Date(previousStartedAt).getTime();
-  if (
-    Number.isNaN(completed) ||
-    Number.isNaN(started) ||
-    completed > started
-  ) {
+  if (Number.isNaN(completed) || Number.isNaN(started) || completed > started) {
     return previousStartedAt;
   }
   const oneHourMs = 60 * 60 * 1000;
@@ -83,7 +79,12 @@ function isEmptySet(s: SetValues): boolean {
 }
 
 function canAddSet(
-  exercises: { weight?: boolean; reps?: boolean; time?: boolean; unique_name: string }[],
+  exercises: {
+    weight?: boolean;
+    reps?: boolean;
+    time?: boolean;
+    unique_name: string;
+  }[],
   sets: SetValues[],
   exerciseUniqueName: string,
 ): boolean {
@@ -281,7 +282,7 @@ export function WorkoutEdit() {
                         onChange={f.onChange}
                         options={exerciseSelectOptions}
                         placeholder="—"
-                        className="min-w-[20rem]"
+                        className="min-w-[20rem] xs:min-w-0 xs:w-full"
                       />
                     )}
                   />
@@ -317,51 +318,53 @@ export function WorkoutEdit() {
                             </button>
                           </div>
                           <div className="flex flex-wrap items-center gap-2 gap-y-2">
-                          {exercise.weight && (
-                            <div className="flex items-center gap-1.5 mr-5">
-                              <input
-                                type="number"
-                                placeholder={weightPlaceholder}
-                                {...register(
-                                  `exercises.${index}.sets.${setIndex}.weight` as const,
-                                )}
-                                className="min-w-[8rem] w-28 rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder"
-                              />
-                              <span className="text-brand-text-muted text-sm shrink-0">
-                                {t(weightUnit === "kg" ? "unit_kg" : "unit_lb")}
-                              </span>
-                            </div>
-                          )}
-                          {exercise.reps && (
-                            <>
-                              <input
-                                type="number"
-                                placeholder={repsPlaceholder}
-                                {...register(
-                                  `exercises.${index}.sets.${setIndex}.reps` as const,
-                                )}
-                                className="min-w-[8rem] w-24 rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder"
-                              />
-                              <span className="text-brand-text-muted text-sm shrink-0">
-                                {t("workout_reps")}
-                              </span>
-                            </>
-                          )}
-                          {exercise.time && (
-                            <div className="flex items-center gap-1.5">
-                              <input
-                                type="number"
-                                placeholder={timePlaceholder}
-                                {...register(
-                                  `exercises.${index}.sets.${setIndex}.time` as const,
-                                )}
-                                className="min-w-[8rem] w-28 rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder"
-                              />
-                              <span className="text-brand-text-muted text-sm shrink-0">
-                                {t("unit_s")}
-                              </span>
-                            </div>
-                          )}
+                            {exercise.weight && (
+                              <div className="flex items-center gap-1.5 mr-5">
+                                <input
+                                  type="number"
+                                  placeholder={weightPlaceholder}
+                                  {...register(
+                                    `exercises.${index}.sets.${setIndex}.weight` as const,
+                                  )}
+                                  className="min-w-[8rem] w-28 rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder"
+                                />
+                                <span className="text-brand-text-muted text-sm shrink-0">
+                                  {t(
+                                    weightUnit === "kg" ? "unit_kg" : "unit_lb",
+                                  )}
+                                </span>
+                              </div>
+                            )}
+                            {exercise.reps && (
+                              <>
+                                <input
+                                  type="number"
+                                  placeholder={repsPlaceholder}
+                                  {...register(
+                                    `exercises.${index}.sets.${setIndex}.reps` as const,
+                                  )}
+                                  className="min-w-[8rem] w-24 rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder"
+                                />
+                                <span className="text-brand-text-muted text-sm shrink-0">
+                                  {t("workout_reps")}
+                                </span>
+                              </>
+                            )}
+                            {exercise.time && (
+                              <div className="flex items-center gap-1.5">
+                                <input
+                                  type="number"
+                                  placeholder={timePlaceholder}
+                                  {...register(
+                                    `exercises.${index}.sets.${setIndex}.time` as const,
+                                  )}
+                                  className="min-w-[8rem] w-28 rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder"
+                                />
+                                <span className="text-brand-text-muted text-sm shrink-0">
+                                  {t("unit_s")}
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </div>
                       );
@@ -369,7 +372,11 @@ export function WorkoutEdit() {
                     <button
                       type="button"
                       disabled={
-                        !canAddSet(allExercises, sets as SetValues[], exerciseUniqueName)
+                        !canAddSet(
+                          allExercises,
+                          sets as SetValues[],
+                          exerciseUniqueName,
+                        )
                       }
                       onClick={() => {
                         const all = watch("exercises") ?? [];
@@ -385,7 +392,11 @@ export function WorkoutEdit() {
                       }}
                       className={cn(
                         "text-sm rounded px-2 py-1 border transition-colors",
-                        canAddSet(allExercises, sets as SetValues[], exerciseUniqueName)
+                        canAddSet(
+                          allExercises,
+                          sets as SetValues[],
+                          exerciseUniqueName,
+                        )
                           ? "border-brand-primary text-brand-primary hover:bg-brand-primary/10"
                           : "border-brand-border bg-brand-code-bg text-brand-text-muted cursor-not-allowed",
                       )}

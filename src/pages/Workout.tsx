@@ -386,7 +386,7 @@ export function Workout() {
                           onChange={field.onChange}
                           options={exerciseSelectOptions}
                           placeholder="—"
-                          className="min-w-[20rem]"
+                          className="min-w-[20rem] xs:min-w-0 xs:w-full"
                         />
                       )}
                     />
@@ -410,7 +410,7 @@ export function Workout() {
                             key={setIndex}
                             className={cn(
                               "text-sm",
-                              "max-[480px]:rounded-lg max-[480px]:border max-[480px]:border-brand-border max-[480px]:bg-brand-bg max-[480px]:p-3",
+                              "xs:rounded-lg xs:border xs:border-brand-border xs:bg-brand-bg xs:p-3",
                             )}
                           >
                             <div className="flex justify-start mb-1.5">
@@ -429,7 +429,7 @@ export function Workout() {
                             </div>
                             <div className="flex flex-wrap items-center gap-2 gap-y-2">
                               {exercise.weight && (
-                                <div className="flex items-center gap-1.5 mr-5 max-[480px]:mr-0">
+                                <div className="flex items-center gap-1.5 mr-5 xs:mr-0">
                                   <input
                                     type="number"
                                     placeholder={weightPlaceholder}

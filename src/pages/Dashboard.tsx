@@ -66,9 +66,9 @@ function RecentWorkoutCard({
         "hover:border-brand-primary hover:bg-brand-primary/5",
       )}
     >
-      <div className="grid grid-cols-3 min-h-[4.5rem] max-[480px]:grid-cols-1">
+      <div className="grid grid-cols-3 min-h-[4.5rem] xs:grid-cols-1">
         {/* Desktop: exercises left */}
-        <div className="col-span-2 p-3 flex flex-col justify-center max-[480px]:hidden">
+        <div className="col-span-2 p-3 flex flex-col justify-center xs:hidden">
           {exerciseLabels.length > 0 ? (
             <ul className="text-xs text-brand-text-muted flex flex-wrap gap-2">
               {exerciseLabels.map((label, i) => (
@@ -85,7 +85,7 @@ function RecentWorkoutCard({
         </div>
 
         {/* Desktop: date/time right */}
-        <div className="col-span-1 border-l border-brand-border flex flex-col items-end justify-center gap-0.5 pr-3 my-3 max-[480px]:hidden">
+        <div className="col-span-1 border-l border-brand-border flex flex-col items-end justify-center gap-0.5 pr-3 my-3 xs:hidden">
           <p className="text-base font-medium text-brand-dark">
             {formatDMY(completedDate)}
           </p>
@@ -98,7 +98,7 @@ function RecentWorkoutCard({
         </div>
 
         {/* Mobile (<480px): date/time top, exercises bottom */}
-        <div className="hidden max-[480px]:block">
+        <div className="hidden xs:block">
           <div className="px-4 py-3 flex items-center justify-between gap-3">
             <div className="min-w-0">
               <p className="text-base font-medium text-brand-dark">
