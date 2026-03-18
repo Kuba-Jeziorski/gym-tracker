@@ -12,7 +12,7 @@ import { deleteTrainingById, fetchTrainings, type TrainingRow, toStoredWorkout, 
 type CompletedWorkoutsContextValue = {
   workouts: StoredWorkout[]
   appendWorkout: (workout: StoredWorkout) => void
-  updateWorkout: (id: string, workout: StoredWorkout) => void
+  updateWorkout: (id: string, workout: StoredWorkout) => Promise<void>
   removeWorkout: (id: string) => void
   isLoading: boolean
 }
@@ -87,9 +87,12 @@ export function CompletedWorkoutsProvider({ children }: { children: ReactNode })
     appendMutation.mutate(workout)
   }, [appendMutation])
 
-  const updateWorkout = useCallback((id: string, workout: StoredWorkout) => {
-    updateMutation.mutate({ id, workout })
-  }, [updateMutation])
+  const updateWorkout = useCallback(
+    async (id: string, workout: StoredWorkout) => {
+      await updateMutation.mutateAsync({ id, workout })
+    },
+    [updateMutation],
+  )
 
   const removeWorkout = useCallback((id: string) => {
     removeMutation.mutate(id)

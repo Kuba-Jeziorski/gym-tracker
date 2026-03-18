@@ -92,7 +92,8 @@ export const translations: Record<Locale, Record<string, string>> = {
     month_november: "November",
     month_december: "December",
     exercises_title: "Exercises",
-    exercises_description: "Built-in and your custom exercises. Add custom exercises with name and weight/reps/time options.",
+    exercises_description:
+      "Built-in and your custom exercises. Add custom exercises with name and weight/reps/time options.",
     exercises_add: "Add custom exercise",
     exercises_edit: "Edit",
     exercises_editTitle: "Edit custom exercise",
@@ -102,9 +103,11 @@ export const translations: Record<Locale, Record<string, string>> = {
     exercises_custom: "Custom",
     exercises_builtIn: "Built-in",
     exercises_removeConfirmTitle: "Remove exercise",
-    exercises_removeConfirmMessage: "Remove this custom exercise? It will no longer appear in the list.",
+    exercises_removeConfirmMessage:
+      "Remove this custom exercise? It will no longer appear in the list.",
     templates_title: "Workout templates",
-    templates_description: "Create templates with a name and a set of exercises to quickly start a workout.",
+    templates_description:
+      "Create templates with a name and a set of exercises to quickly start a workout.",
     templates_create: "Create template",
     templates_edit: "Edit",
     templates_editTitle: "Edit template",
@@ -128,6 +131,9 @@ export const translations: Record<Locale, Record<string, string>> = {
       "Are you sure you want to remove this workout? This cannot be undone.",
     workoutEdit_save: "Save",
     workoutEdit_cancel: "Cancel",
+    workoutEdit_completedAt: "Completed date & time",
+    workoutEdit_completedAtHint:
+      "Adjust if you saved the workout on a different day than you trained. If the new time is earlier than when the app session started, the start time is moved back so both stay valid.",
     install_title: "Install app",
     install_description:
       "How to add Gym Tracker to your home screen: Android (default browser), iOS (Safari, Chrome).",
@@ -140,7 +146,8 @@ export const translations: Record<Locale, Record<string, string>> = {
     user_stat_workoutsThisWeek: "This week",
     user_stat_workoutsThisMonth: "This month",
     user_personalBestHeading: "Personal bests",
-    user_personalBestEmpty: "Complete workouts with weight and reps to see personal bests here.",
+    user_personalBestEmpty:
+      "Complete workouts with weight and reps to see personal bests here.",
     user_saveChanges: "Save changes",
     user_saving: "Saving…",
     user_saved: "Saved",
@@ -194,9 +201,11 @@ export const translations: Record<Locale, Record<string, string>> = {
     auth_error_missingEmail: "Please enter your email.",
     auth_error_passwordMismatch: "Passwords must match.",
     auth_optional: "optional",
-    auth_success_signup: "Account created. Check your email to confirm, or sign in if already confirmed.",
+    auth_success_signup:
+      "Account created. Check your email to confirm, or sign in if already confirmed.",
     auth_forgotPassword: "Forgot password?",
-    auth_success_passwordEmailSent: "Password reset email sent. Check your inbox.",
+    auth_success_passwordEmailSent:
+      "Password reset email sent. Check your inbox.",
     auth_success_passwordReset: "Password updated. You can now continue.",
     notFound_title: "404",
     notFound_message: "Page not found.",
@@ -220,6 +229,7 @@ export const translations: Record<Locale, Record<string, string>> = {
     dumbbell_row: "Dumbbell row",
     lat_pulldown: "Lat pulldown",
     pull_up: "Pull-up",
+    chin_up: "Chin-up",
     overhead_press: "Overhead press",
     lateral_raise: "Lateral raise",
     face_pull: "Face pull",
@@ -326,7 +336,8 @@ export const translations: Record<Locale, Record<string, string>> = {
     month_november: "Listopad",
     month_december: "Grudzień",
     exercises_title: "Ćwiczenia",
-    exercises_description: "Wbudowane i Twoje własne ćwiczenia. Dodaj własne z nazwą i opcjami obciążenie/powtórzenia/czas.",
+    exercises_description:
+      "Wbudowane i Twoje własne ćwiczenia. Dodaj własne z nazwą i opcjami obciążenie/powtórzenia/czas.",
     exercises_add: "Dodaj własne ćwiczenie",
     exercises_edit: "Edytuj",
     exercises_editTitle: "Edytuj własne ćwiczenie",
@@ -336,9 +347,11 @@ export const translations: Record<Locale, Record<string, string>> = {
     exercises_custom: "Własne",
     exercises_builtIn: "Wbudowane",
     exercises_removeConfirmTitle: "Usuń ćwiczenie",
-    exercises_removeConfirmMessage: "Usunąć to własne ćwiczenie? Zniknie z listy.",
+    exercises_removeConfirmMessage:
+      "Usunąć to własne ćwiczenie? Zniknie z listy.",
     templates_title: "Szablony treningów",
-    templates_description: "Twórz szablony z nazwą i zestawem ćwiczeń, aby szybko rozpoczynać trening.",
+    templates_description:
+      "Twórz szablony z nazwą i zestawem ćwiczeń, aby szybko rozpoczynać trening.",
     templates_create: "Utwórz szablon",
     templates_edit: "Edytuj",
     templates_editTitle: "Edytuj szablon",
@@ -362,6 +375,9 @@ export const translations: Record<Locale, Record<string, string>> = {
       "Czy na pewno chcesz usunąć ten trening? Tej operacji nie można cofnąć.",
     workoutEdit_save: "Zapisz",
     workoutEdit_cancel: "Anuluj",
+    workoutEdit_completedAt: "Data i godzina zakończenia",
+    workoutEdit_completedAtHint:
+      "Zmień, jeśli zapisałeś trening w innym dniu. Jeśli nowy czas jest wcześniejszy niż start sesji w aplikacji, czas startu zostanie cofnięty, żeby dane były spójne.",
     install_title: "Zainstaluj aplikację",
     install_description:
       "Jak dodać Gym Tracker na ekran główny: Android (domyślna przeglądarka), iOS (Safari, Chrome).",
@@ -374,7 +390,8 @@ export const translations: Record<Locale, Record<string, string>> = {
     user_stat_workoutsThisWeek: "W tym tygodniu",
     user_stat_workoutsThisMonth: "W tym miesiącu",
     user_personalBestHeading: "Rekordy osobiste",
-    user_personalBestEmpty: "Ukończ treningi z obciążeniem i powtórzeniami, aby zobaczyć rekordy.",
+    user_personalBestEmpty:
+      "Ukończ treningi z obciążeniem i powtórzeniami, aby zobaczyć rekordy.",
     user_saveChanges: "Zapisz zmiany",
     user_saving: "Zapisywanie…",
     user_saved: "Zapisano",
@@ -428,9 +445,11 @@ export const translations: Record<Locale, Record<string, string>> = {
     auth_error_missingEmail: "Wpisz e-mail.",
     auth_error_passwordMismatch: "Hasła muszą być takie same.",
     auth_optional: "opcjonalnie",
-    auth_success_signup: "Konto utworzone. Sprawdź e-mail, aby potwierdzić, lub zaloguj się, jeśli już potwierdziłeś.",
+    auth_success_signup:
+      "Konto utworzone. Sprawdź e-mail, aby potwierdzić, lub zaloguj się, jeśli już potwierdziłeś.",
     auth_forgotPassword: "Nie pamiętasz hasła?",
-    auth_success_passwordEmailSent: "Wysłano e-mail do resetu hasła. Sprawdź skrzynkę.",
+    auth_success_passwordEmailSent:
+      "Wysłano e-mail do resetu hasła. Sprawdź skrzynkę.",
     auth_success_passwordReset: "Hasło zostało zmienione. Możesz kontynuować.",
     notFound_title: "404",
     notFound_message: "Strona nie została znaleziona.",
@@ -454,6 +473,7 @@ export const translations: Record<Locale, Record<string, string>> = {
     dumbbell_row: "Wiosłowanie jednorącz",
     lat_pulldown: "Ściąganie wyciągu do karku",
     pull_up: "Podciąganie",
+    chin_up: "Podciąganie podchwytem",
     overhead_press: "Wyciskanie nad głowę",
     lateral_raise: "Unoszenie bokiem",
     face_pull: "Face pull",

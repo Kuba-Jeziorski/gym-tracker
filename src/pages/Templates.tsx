@@ -4,7 +4,7 @@ import { useLanguage } from "../contexts/LanguageContext";
 import { useAllExercises } from "../contexts/CustomExercisesContext";
 import { useWorkoutTemplates } from "../contexts/WorkoutTemplatesContext";
 import type { WorkoutTemplate } from "../data/workoutTemplates";
-import { selectStyles } from "../components/Select";
+import { selectStylesMulti } from "../components/Select";
 import { ConfirmModal } from "../components/ConfirmModal";
 import { cn } from "../lib/utils";
 
@@ -81,16 +81,18 @@ export function Templates() {
   };
 
   return (
-    <div>
-      <h1 className="text-2xl font-semibold text-brand-dark mb-2">
-        {t("templates_title")}
-      </h1>
-      <p className="text-brand-text-muted mb-6">{t("templates_description")}</p>
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+      <div className="shrink-0">
+        <h1 className="text-2xl font-semibold text-brand-dark mb-2">
+          {t("templates_title")}
+        </h1>
+        <p className="text-brand-text-muted mb-6">{t("templates_description")}</p>
+      </div>
 
       <form
         ref={formRef}
         onSubmit={handleSubmit}
-        className="rounded-xl border border-brand-border bg-brand-bg-soft p-4 mb-6"
+        className="shrink-0 rounded-xl border border-brand-border bg-brand-bg-soft p-4 mb-4"
       >
         <h2 className="text-lg font-medium text-brand-dark mb-3">
           {editTarget ? t("templates_editTitle") : t("templates_create")}
@@ -128,9 +130,11 @@ export function Templates() {
             <span className="text-sm text-brand-text-muted">
               {t("templates_exercisesLabel")}
             </span>
-            <div className="w-full">
+            <div className="w-full min-w-0">
               <SelectLib<Option, true>
                 isMulti
+                closeMenuOnSelect={false}
+                hideSelectedOptions={false}
                 value={selectedOptions}
                 onChange={(selected) =>
                   setSelectedUniqueNames(
@@ -139,8 +143,13 @@ export function Templates() {
                 }
                 options={options}
                 placeholder="—"
-                styles={selectStyles}
+                styles={selectStylesMulti}
                 classNamePrefix="gym-select"
+                className="min-w-0"
+                menuPortalTarget={
+                  typeof document !== "undefined" ? document.body : null
+                }
+                menuPosition="fixed"
               />
             </div>
           </label>
@@ -171,13 +180,20 @@ export function Templates() {
       </form>
 
       {templates.length === 0 ? (
-        <p className="text-brand-text-muted text-sm">{t("templates_empty")}</p>
+        <p className="text-brand-text-muted text-sm shrink-0">
+          {t("templates_empty")}
+        </p>
       ) : (
-        <ul className="space-y-2">
+        <div className="flex-1 min-h-0 min-w-0 flex flex-col">
+          <ul
+            className={cn(
+              "list-none m-0 p-0 space-y-2 flex-1 min-h-0 overflow-y-auto min-w-0 pr-1",
+            )}
+          >
           {templates.map((template) => (
             <li
               key={template.id}
-              className="flex items-center justify-between gap-2 rounded-lg border border-brand-border bg-brand-bg-soft px-4 py-3"
+              className="flex items-center justify-between gap-2 rounded-lg border border-brand-border bg-brand-bg-soft px-4 py-3 list-none"
             >
               <div>
                 <p className="font-medium text-brand-dark">{template.name}</p>
@@ -204,7 +220,8 @@ export function Templates() {
               </div>
             </li>
           ))}
-        </ul>
+          </ul>
+        </div>
       )}
 
       <ConfirmModal

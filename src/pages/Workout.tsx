@@ -10,7 +10,6 @@ import { useAllExercises } from "../contexts/CustomExercisesContext";
 import type { StoredWorkout } from "../data/workoutStorage";
 import { inputWeightToKg } from "../helpers/weightConversion";
 import { Select } from "../components/Select";
-import { Trash2 } from "lucide-react";
 import { ConfirmModal } from "../components/ConfirmModal";
 import { routes } from "../routes";
 import { cn } from "../lib/utils";
@@ -41,7 +40,12 @@ function isEmptySet(s: SetValues): boolean {
 }
 
 function canAddSet(
-  exercises: { weight?: boolean; reps?: boolean; time?: boolean; unique_name: string }[],
+  exercises: {
+    weight?: boolean;
+    reps?: boolean;
+    time?: boolean;
+    unique_name: string;
+  }[],
   sets: SetValues[],
   exerciseUniqueName: string,
 ): boolean {
@@ -68,16 +72,26 @@ function isSetValidForExercise(
 
 function canFinishWorkout(
   exercises: WorkoutExercise[] | undefined,
-  allExercises: { weight?: boolean; reps?: boolean; time?: boolean; unique_name: string }[],
+  allExercises: {
+    weight?: boolean;
+    reps?: boolean;
+    time?: boolean;
+    unique_name: string;
+  }[],
 ): boolean {
   if (!exercises?.length) return false;
   const hasAtLeastOneValidSet = exercises.some((ex) => {
-    const exercise = allExercises.find((e) => e.unique_name === ex.exerciseUniqueName);
+    const exercise = allExercises.find(
+      (e) => e.unique_name === ex.exerciseUniqueName,
+    );
     return (ex.sets ?? []).some((s) => isSetValidForExercise(s, exercise));
   });
   const everySetValid = exercises.every((ex) => {
-    const exercise = allExercises.find((e) => e.unique_name === ex.exerciseUniqueName);
-    if (!exercise) return (ex.sets ?? []).length === 0 || (ex.sets ?? []).every(isEmptySet);
+    const exercise = allExercises.find(
+      (e) => e.unique_name === ex.exerciseUniqueName,
+    );
+    if (!exercise)
+      return (ex.sets ?? []).length === 0 || (ex.sets ?? []).every(isEmptySet);
     return (ex.sets ?? []).every((s) => isSetValidForExercise(s, exercise));
   });
   return hasAtLeastOneValidSet && everySetValid;
@@ -110,16 +124,14 @@ export function Workout() {
   } | null>(null);
   const [atTop, setAtTop] = useState(true);
   const [atBottom, setAtBottom] = useState(true);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const exerciseListScrollRef = useRef<HTMLUListElement>(null);
 
   const checkScroll = useCallback(() => {
-    const el = scrollRef.current;
+    const el = exerciseListScrollRef.current;
     if (!el) return;
     const threshold = 2;
     setAtTop(el.scrollTop <= threshold);
-    setAtBottom(
-      el.scrollHeight - el.scrollTop - el.clientHeight <= threshold,
-    );
+    setAtBottom(el.scrollHeight - el.scrollTop - el.clientHeight <= threshold);
   }, []);
 
   const { control, register, watch, handleSubmit, setValue, reset } =
@@ -178,7 +190,9 @@ export function Workout() {
         };
       }),
     };
-    const exerciseUniqueNames = stored.exercises.map((e) => e.exerciseUniqueName);
+    const exerciseUniqueNames = stored.exercises.map(
+      (e) => e.exerciseUniqueName,
+    );
     const templateId = currentWorkout!.templateId;
     if (templateId) {
       const template = templates.find((t) => t.id === templateId);
@@ -198,7 +212,9 @@ export function Workout() {
 
   const handleTemplateSaveUpdate = () => {
     if (!templateSaveModal) return;
-    const template = templates.find((t) => t.id === templateSaveModal.templateId);
+    const template = templates.find(
+      (t) => t.id === templateSaveModal.templateId,
+    );
     if (template) {
       updateTemplate(templateSaveModal.templateId, {
         name: template.name,
@@ -213,7 +229,9 @@ export function Workout() {
 
   const handleTemplateSaveNew = () => {
     if (!templateSaveModal) return;
-    const template = templates.find((t) => t.id === templateSaveModal.templateId);
+    const template = templates.find(
+      (t) => t.id === templateSaveModal.templateId,
+    );
     const name = template
       ? `${template.name} (${t("workout_templateCopy")})`
       : t("templates_namePlaceholder");
@@ -320,191 +338,187 @@ export function Workout() {
 
       <div
         className={cn(
-          "flex-1 min-h-0 min-w-0 relative overflow-hidden scroll-fade-bottom scroll-fade-top",
+          "flex-1 min-h-0 min-w-0 flex flex-col relative overflow-hidden scroll-fade-bottom scroll-fade-top",
           atBottom && "at-bottom",
           atTop && "at-top",
         )}
       >
-        <div
-          ref={scrollRef}
-          className="h-full overflow-y-auto min-h-0"
-          onScroll={checkScroll}
-        >
-          <div className="rounded-lg border border-brand-border bg-brand-bg-soft p-4 mb-4">
-            <div className="space-y-6">
-          {exerciseFields.map((field, index) => {
-            const exerciseUniqueName =
-              watchedExercises?.[index]?.exerciseUniqueName ?? "";
-            const exercise = allExercises.find(
-              (e) => e.unique_name === exerciseUniqueName,
-            );
-            const sets = watchedExercises?.[index]?.sets ?? [];
+        <div className="rounded-lg border border-brand-border bg-brand-bg-soft p-4 mb-4 flex flex-col flex-1 min-h-0">
+          <ul
+            ref={exerciseListScrollRef}
+            onScroll={checkScroll}
+            className={cn(
+              "list-none m-0 p-0 space-y-2 flex-1 min-h-0 overflow-y-auto min-w-0",
+            )}
+          >
+            {exerciseFields.map((field, index) => {
+              const exerciseUniqueName =
+                watchedExercises?.[index]?.exerciseUniqueName ?? "";
+              const exercise = allExercises.find(
+                (e) => e.unique_name === exerciseUniqueName,
+              );
+              const sets = watchedExercises?.[index]?.sets ?? [];
 
-            return (
-              <div
-                key={field.id}
-                className="rounded-lg border border-brand-border bg-brand-bg p-4 space-y-3"
-              >
-                <div className="flex items-center gap-2 flex-wrap">
-                  <label className="text-sm font-medium text-brand-dark shrink-0">
-                    {t("workout_exercise")}
-                  </label>
-                  <Controller
-                    control={control}
-                    name={`exercises.${index}.exerciseUniqueName` as const}
-                    render={({ field }) => (
-                      <Select
-                        value={field.value}
-                        onChange={field.onChange}
-                        options={exerciseSelectOptions}
-                        placeholder="—"
-                        className="min-w-[20rem]"
-                      />
-                    )}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeExercise(index)}
-                    className="text-brand-text-muted hover:text-brand-text text-sm"
-                  >
-                    {t("workout_removeExercise")}
-                  </button>
-                </div>
-
-                {exercise && (
-                  <div className="space-y-2">
-                    {(sets as SetValues[]).map((_, setIndex) => {
-                      const prevSet =
-                        setIndex > 0
-                          ? (sets as SetValues[])[setIndex - 1]
-                          : null;
-                      const weightPlaceholder =
-                        prevSet?.weight?.trim() || t("workout_weight");
-                      const repsPlaceholder =
-                        prevSet?.reps?.trim() || t("workout_reps");
-                      const timePlaceholder =
-                        prevSet?.time?.trim() || t("workout_time");
-                      return (
-                        <div
-                          key={setIndex}
-                          className={cn(
-                            "text-sm",
-                            "max-[480px]:rounded-lg max-[480px]:border max-[480px]:border-brand-border max-[480px]:bg-brand-bg max-[480px]:p-3",
-                          )}
-                        >
-                          <div className="flex flex-wrap items-center gap-2 gap-y-2">
-                            {exercise.weight && (
-                              <div className="flex items-center gap-1.5 mr-5 max-[480px]:mr-0">
-                                <input
-                                  type="number"
-                                  placeholder={weightPlaceholder}
-                                  {...register(
-                                    `exercises.${index}.sets.${setIndex}.weight` as const,
-                                  )}
-                                  className="min-w-[8rem] w-28 rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder"
-                                />
-                                <span className="text-brand-text-muted text-sm shrink-0">
-                                  {t(weightUnit === "kg" ? "unit_kg" : "unit_lb")}
-                                </span>
-                              </div>
-                            )}
-                            {exercise.reps && (
-                              <>
-                                <input
-                                  type="number"
-                                  placeholder={repsPlaceholder}
-                                  {...register(
-                                    `exercises.${index}.sets.${setIndex}.reps` as const,
-                                  )}
-                                  className="min-w-[8rem] w-24 rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder"
-                                />
-                                <span className="text-brand-text-muted text-sm shrink-0">
-                                  {t("workout_reps")}
-                                </span>
-                              </>
-                            )}
-                            {exercise.time && (
-                              <div className="flex items-center gap-1.5">
-                                <input
-                                  type="number"
-                                  placeholder={timePlaceholder}
-                                  {...register(
-                                    `exercises.${index}.sets.${setIndex}.time` as const,
-                                  )}
-                                  className="min-w-[8rem] w-28 rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder"
-                                />
-                                <span className="text-brand-text-muted text-sm shrink-0">
-                                {t("unit_s")}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setRemoveSetTarget({ exerciseIndex: index, setIndex })
-                            }
-                            className={cn(
-                              "mt-2 hidden max-[480px]:flex",
-                              "w-full items-center justify-center gap-2",
-                              "rounded-lg border border-brand-border bg-brand-bg px-3 py-2",
-                              "text-sm font-medium text-brand-text-muted",
-                              "hover:text-red-400 hover:border-red-500/40 hover:bg-red-500/5 transition-colors",
-                            )}
-                          >
-                            <Trash2 className="size-4" aria-hidden />
-                            {t("workout_removeSet")}
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setRemoveSetTarget({ exerciseIndex: index, setIndex })
-                            }
-                            className={cn(
-                              "max-[480px]:hidden",
-                              "shrink-0 rounded p-1 transition-colors",
-                              "text-brand-text-muted hover:text-red-400 active:text-red-400 focus-visible:text-red-400 focus-visible:outline-none",
-                            )}
-                            title={t("workout_removeSet")}
-                            aria-label={t("workout_removeSet")}
-                          >
-                            <Trash2 className="size-5" aria-hidden />
-                          </button>
-                        </div>
-                      );
-                    })}
+              return (
+                <li
+                  key={field.id}
+                  className="rounded-lg border border-brand-border bg-brand-bg p-4 space-y-3 list-none"
+                >
+                  <div className="flex justify-start -mt-0.5">
                     <button
                       type="button"
-                      disabled={
-                        !canAddSet(allExercises, sets as SetValues[], exerciseUniqueName)
-                      }
-                      onClick={() => {
-                        const nextSet = defaultSet();
-                        const all = watch("exercises") ?? [];
-                        const updated = all.map((ex, i) =>
-                          i === index
-                            ? { ...ex, sets: [...(ex.sets ?? []), nextSet] }
-                            : ex,
-                        );
-                        setValue("exercises", updated);
-                      }}
-                      className={cn(
-                        "text-sm rounded px-2 py-1 border transition-colors",
-                        canAddSet(allExercises, sets as SetValues[], exerciseUniqueName)
-                          ? "border-brand-primary text-brand-primary hover:bg-brand-primary/10"
-                          : "border-brand-border bg-brand-code-bg text-brand-text-muted cursor-not-allowed",
-                      )}
+                      onClick={() => removeExercise(index)}
+                      className="text-sm text-brand-text-muted hover:text-red-400 transition-colors"
                     >
-                      {t("workout_addSet")}
+                      {t("workout_removeExercise")}
                     </button>
                   </div>
-                )}
-              </div>
-            );
-          })}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <label className="text-sm font-medium text-brand-dark shrink-0">
+                      {t("workout_exercise")}
+                    </label>
+                    <Controller
+                      control={control}
+                      name={`exercises.${index}.exerciseUniqueName` as const}
+                      render={({ field }) => (
+                        <Select
+                          value={field.value}
+                          onChange={field.onChange}
+                          options={exerciseSelectOptions}
+                          placeholder="—"
+                          className="min-w-[20rem]"
+                        />
+                      )}
+                    />
+                  </div>
 
+                  {exercise && (
+                    <div className="space-y-2">
+                      {(sets as SetValues[]).map((_, setIndex) => {
+                        const prevSet =
+                          setIndex > 0
+                            ? (sets as SetValues[])[setIndex - 1]
+                            : null;
+                        const weightPlaceholder =
+                          prevSet?.weight?.trim() || t("workout_weight");
+                        const repsPlaceholder =
+                          prevSet?.reps?.trim() || t("workout_reps");
+                        const timePlaceholder =
+                          prevSet?.time?.trim() || t("workout_time");
+                        return (
+                          <div
+                            key={setIndex}
+                            className={cn(
+                              "text-sm",
+                              "max-[480px]:rounded-lg max-[480px]:border max-[480px]:border-brand-border max-[480px]:bg-brand-bg max-[480px]:p-3",
+                            )}
+                          >
+                            <div className="flex justify-start mb-1.5">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setRemoveSetTarget({
+                                    exerciseIndex: index,
+                                    setIndex,
+                                  })
+                                }
+                                className="text-sm text-brand-text-muted hover:text-red-400 transition-colors"
+                              >
+                                {t("workout_removeSet")}
+                              </button>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2 gap-y-2">
+                              {exercise.weight && (
+                                <div className="flex items-center gap-1.5 mr-5 max-[480px]:mr-0">
+                                  <input
+                                    type="number"
+                                    placeholder={weightPlaceholder}
+                                    {...register(
+                                      `exercises.${index}.sets.${setIndex}.weight` as const,
+                                    )}
+                                    className="min-w-[8rem] w-28 rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder"
+                                  />
+                                  <span className="text-brand-text-muted text-sm shrink-0">
+                                    {t(
+                                      weightUnit === "kg"
+                                        ? "unit_kg"
+                                        : "unit_lb",
+                                    )}
+                                  </span>
+                                </div>
+                              )}
+                              {exercise.reps && (
+                                <>
+                                  <input
+                                    type="number"
+                                    placeholder={repsPlaceholder}
+                                    {...register(
+                                      `exercises.${index}.sets.${setIndex}.reps` as const,
+                                    )}
+                                    className="min-w-[8rem] w-24 rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder"
+                                  />
+                                  <span className="text-brand-text-muted text-sm shrink-0">
+                                    {t("workout_reps")}
+                                  </span>
+                                </>
+                              )}
+                              {exercise.time && (
+                                <div className="flex items-center gap-1.5">
+                                  <input
+                                    type="number"
+                                    placeholder={timePlaceholder}
+                                    {...register(
+                                      `exercises.${index}.sets.${setIndex}.time` as const,
+                                    )}
+                                    className="min-w-[8rem] w-28 rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder"
+                                  />
+                                  <span className="text-brand-text-muted text-sm shrink-0">
+                                    {t("unit_s")}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                      <button
+                        type="button"
+                        disabled={
+                          !canAddSet(
+                            allExercises,
+                            sets as SetValues[],
+                            exerciseUniqueName,
+                          )
+                        }
+                        onClick={() => {
+                          const nextSet = defaultSet();
+                          const all = watch("exercises") ?? [];
+                          const updated = all.map((ex, i) =>
+                            i === index
+                              ? { ...ex, sets: [...(ex.sets ?? []), nextSet] }
+                              : ex,
+                          );
+                          setValue("exercises", updated);
+                        }}
+                        className={cn(
+                          "text-sm rounded px-2 py-1 border transition-colors",
+                          canAddSet(
+                            allExercises,
+                            sets as SetValues[],
+                            exerciseUniqueName,
+                          )
+                            ? "border-brand-primary text-brand-primary hover:bg-brand-primary/10"
+                            : "border-brand-border bg-brand-code-bg text-brand-text-muted cursor-not-allowed",
+                        )}
+                      >
+                        {t("workout_addSet")}
+                      </button>
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
           <button
             type="button"
             onClick={() =>
@@ -513,12 +527,10 @@ export function Workout() {
                 sets: [defaultSet()],
               })
             }
-            className="w-full rounded-lg border border-dashed border-brand-border py-3 text-brand-text-muted hover:border-brand-primary hover:text-brand-primary transition-colors text-sm font-medium"
+            className="mt-3 shrink-0 w-full rounded-lg border border-dashed border-brand-border py-3 text-brand-text-muted hover:border-brand-primary hover:text-brand-primary transition-colors text-sm font-medium"
           >
             + {t("workout_addExercise")}
           </button>
-        </div>
-          </div>
         </div>
       </div>
 

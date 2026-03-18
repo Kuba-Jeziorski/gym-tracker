@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useForm, useFieldArray, Controller } from "react-hook-form";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { CircleMinus } from "lucide-react";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useWeightUnit } from "../contexts/WeightUnitContext";
 import { useCompletedWorkouts } from "../contexts/CompletedWorkoutsContext";
@@ -28,8 +27,50 @@ type WorkoutExercise = {
 };
 
 type WorkoutFormValues = {
+  completedAt: string;
   exercises: WorkoutExercise[];
 };
+
+function toDatetimeLocalValue(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function datetimeLocalToIso(value: string): string | null {
+  // `datetime-local` gives a string like: `YYYY-MM-DDTHH:mm` (no timezone).
+  // We must parse it explicitly to avoid browser/date parsing differences.
+  if (!value) return null;
+  const [datePart, timePart] = value.split("T");
+  if (!datePart || !timePart) return null;
+
+  const [y, m, d] = datePart.split("-").map((x) => Number(x));
+  const [hh, mm] = timePart.split(":").map((x) => Number(x));
+
+  if ([y, m, d, hh, mm].some((n) => Number.isNaN(n))) return null;
+
+  const dt = new Date(y, m - 1, d, hh, mm, 0, 0);
+  return dt.toISOString();
+}
+
+/** DB requires completed_at after started_at; shift start when user sets completion in the past. */
+function startedAtForCompletedAt(
+  previousStartedAt: string,
+  completedAtIso: string,
+): string {
+  const completed = new Date(completedAtIso).getTime();
+  const started = new Date(previousStartedAt).getTime();
+  if (
+    Number.isNaN(completed) ||
+    Number.isNaN(started) ||
+    completed > started
+  ) {
+    return previousStartedAt;
+  }
+  const oneHourMs = 60 * 60 * 1000;
+  return new Date(Math.max(0, completed - oneHourMs)).toISOString();
+}
 
 const defaultSet = (): SetValues => ({ weight: "", reps: "", time: "" });
 
@@ -72,7 +113,7 @@ export function WorkoutEdit() {
 
   const { control, register, watch, handleSubmit, setValue, reset } =
     useForm<WorkoutFormValues>({
-      defaultValues: { exercises: [] },
+      defaultValues: { completedAt: "", exercises: [] },
     });
 
   const {
@@ -102,7 +143,10 @@ export function WorkoutEdit() {
     if (formExercises.length === 0) {
       formExercises.push({ exerciseUniqueName: "", sets: [defaultSet()] });
     }
-    reset({ exercises: formExercises });
+    reset({
+      completedAt: toDatetimeLocalValue(workout.completedAt),
+      exercises: formExercises,
+    });
   }, [workout, weightUnit, reset]);
 
   const exerciseSelectOptions = allExercises.map((ex) => ({
@@ -110,10 +154,15 @@ export function WorkoutEdit() {
     label: ex.unique_name.startsWith("custom_") ? ex.name : t(ex.unique_name),
   }));
 
-  const onSave = handleSubmit((data) => {
+  const onSave = handleSubmit(async (data) => {
     if (!id || !workout) return;
+    const completedAt = datetimeLocalToIso(data.completedAt);
+    if (!completedAt) return;
+    const startedAt = startedAtForCompletedAt(workout.startedAt, completedAt);
     const updated: StoredWorkout = {
       ...workout,
+      startedAt,
+      completedAt,
       exercises: data.exercises.map((ex) => {
         const mapped = (ex.sets ?? []).map((s) => ({
           weight: inputWeightToKg(s.weight ?? "", weightUnit),
@@ -126,7 +175,7 @@ export function WorkoutEdit() {
         };
       }),
     };
-    updateWorkout(id, updated);
+    await updateWorkout(id, updated);
     navigate(routes.workoutDetail(id));
   });
 
@@ -174,15 +223,29 @@ export function WorkoutEdit() {
         <h1 className="text-2xl font-semibold text-brand-dark">
           {t("titles_workoutDetailEdit")}
         </h1>
-        <p className="text-brand-text-muted text-sm">
-          {new Date(workout.completedAt).toLocaleDateString(undefined, {
-            dateStyle: "medium",
-          })}
-        </p>
       </header>
 
       <div className="rounded-lg border border-brand-border bg-brand-bg-soft p-4 mb-4">
         <form id="workout-edit-form" onSubmit={onSave} className="space-y-6">
+          <div>
+            <label
+              htmlFor="workout-edit-completed-at"
+              className="block text-sm font-medium text-brand-dark mb-1.5"
+            >
+              {t("workoutEdit_completedAt")}
+            </label>
+            <input
+              id="workout-edit-completed-at"
+              type="datetime-local"
+              step={60}
+              {...register("completedAt", { required: true })}
+              className="max-w-full rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text"
+            />
+            <p className="text-brand-text-muted text-xs mt-1.5">
+              {t("workoutEdit_completedAtHint")}
+            </p>
+          </div>
+
           {exerciseFields.map((field, index) => {
             const exerciseUniqueName =
               watchedExercises?.[index]?.exerciseUniqueName ?? "";
@@ -196,6 +259,15 @@ export function WorkoutEdit() {
                 key={field.id}
                 className="rounded-lg border border-brand-border bg-brand-bg p-4 space-y-3"
               >
+                <div className="flex justify-end -mt-0.5">
+                  <button
+                    type="button"
+                    onClick={() => removeExercise(index)}
+                    className="text-sm text-brand-text-muted hover:text-red-400 transition-colors"
+                  >
+                    {t("workout_removeExercise")}
+                  </button>
+                </div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <label className="text-sm font-medium text-brand-dark shrink-0">
                     {t("workout_exercise")}
@@ -213,13 +285,6 @@ export function WorkoutEdit() {
                       />
                     )}
                   />
-                  <button
-                    type="button"
-                    onClick={() => removeExercise(index)}
-                    className="text-brand-text-muted hover:text-brand-text text-sm"
-                  >
-                    {t("workout_remove")}
-                  </button>
                 </div>
 
                 {exercise && (
@@ -236,24 +301,22 @@ export function WorkoutEdit() {
                       const timePlaceholder =
                         prevSet?.time?.trim() || t("workout_time");
                       return (
-                        <div
-                          key={setIndex}
-                          className="flex flex-wrap items-center gap-2 gap-y-2 text-sm"
-                        >
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setRemoveSetTarget({ exerciseIndex: index, setIndex })
-                            }
-                            className={cn(
-                              "shrink-0 rounded p-1 transition-colors",
-                              "text-brand-text-muted hover:text-red-400 active:text-red-400 focus-visible:text-red-400 focus-visible:outline-none",
-                            )}
-                            title={t("workout_removeSet")}
-                            aria-label={t("workout_removeSet")}
-                          >
-                            <CircleMinus className="size-5" />
-                          </button>
+                        <div key={setIndex} className="text-sm space-y-1.5">
+                          <div className="flex justify-end">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setRemoveSetTarget({
+                                  exerciseIndex: index,
+                                  setIndex,
+                                })
+                              }
+                              className="text-sm text-brand-text-muted hover:text-red-400 transition-colors"
+                            >
+                              {t("workout_removeSet")}
+                            </button>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-2 gap-y-2">
                           {exercise.weight && (
                             <div className="flex items-center gap-1.5 mr-5">
                               <input
@@ -299,6 +362,7 @@ export function WorkoutEdit() {
                               </span>
                             </div>
                           )}
+                          </div>
                         </div>
                       );
                     })}

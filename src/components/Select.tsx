@@ -61,6 +61,43 @@ export const selectStyles = {
   }),
 };
 
+/** Styles for react-select `isMulti` — single-select uses fixed 42px height which breaks multi. */
+export const selectStylesMulti = {
+  ...selectStyles,
+  control: (base: Record<string, unknown>, state: { isFocused: boolean }) => ({
+    ...selectStyles.control(base, state),
+    minHeight: 42,
+    height: "auto",
+  }),
+  valueContainer: (base: Record<string, unknown>) => ({
+    ...base,
+    padding: "4px 8px",
+    flexWrap: "wrap" as const,
+    maxHeight: "none",
+    gap: 4,
+  }),
+  multiValue: (base: Record<string, unknown>) => ({
+    ...base,
+    backgroundColor: "var(--brand-code-bg)",
+  }),
+  multiValueLabel: (base: Record<string, unknown>) => ({
+    ...base,
+    color: "var(--brand-text)",
+  }),
+  multiValueRemove: (base: Record<string, unknown>) => ({
+    ...base,
+    color: "var(--brand-text-muted)",
+    ":hover": {
+      backgroundColor: "var(--brand-border)",
+      color: "var(--brand-text)",
+    },
+  }),
+  menuPortal: (base: Record<string, unknown>) => ({
+    ...base,
+    zIndex: 9999,
+  }),
+};
+
 type Option = { value: string; label: string };
 
 type SelectProps = {

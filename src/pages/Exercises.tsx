@@ -7,7 +7,7 @@ import { MUSCLE_GROUPS } from "../data/exercises";
 import { ConfirmModal } from "../components/ConfirmModal";
 import { Switch } from "../components/Switch";
 import { Select } from "../components/Select";
-import { selectStyles } from "../components/Select";
+import { selectStylesMulti } from "../components/Select";
 import { cn } from "../lib/utils";
 
 type MuscleOption = { value: string; label: string };
@@ -216,9 +216,11 @@ export function Exercises() {
             <span className="text-sm text-brand-text-muted">
               {t("exercises_allMuscleGroups")}
             </span>
-            <div className="min-w-0 w-full sm:min-w-[24rem] overflow-hidden">
+            <div className="min-w-0 w-full sm:min-w-[24rem]">
               <SelectLib<MuscleOption, true>
                 isMulti
+                closeMenuOnSelect={false}
+                hideSelectedOptions={false}
                 value={allMuscleGroups.map((value) => ({
                   value,
                   label:
@@ -232,9 +234,13 @@ export function Exercises() {
                 }
                 options={muscleGroupOptions}
                 placeholder="—"
-                styles={selectStyles}
+                styles={selectStylesMulti}
                 classNamePrefix="gym-select"
                 className="min-w-0"
+                menuPortalTarget={
+                  typeof document !== "undefined" ? document.body : null
+                }
+                menuPosition="fixed"
               />
             </div>
           </label>
