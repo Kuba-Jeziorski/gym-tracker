@@ -116,7 +116,7 @@ export function Layout() {
             type="button"
             onClick={() => setMobileNavOpen(false)}
             className="fixed inset-0 z-40 bg-black/55"
-            aria-label="Close navigation"
+            aria-label={t("nav_close")}
           />
         )}
         <aside
@@ -145,7 +145,7 @@ export function Layout() {
               type="button"
               onClick={() => setMobileNavOpen(false)}
               className="rounded-lg p-2 text-brand-text-muted hover:text-brand-text hover:bg-brand-bg transition-colors"
-              aria-label="Close navigation"
+              aria-label={t("nav_close")}
             >
               <X className="w-5 h-5" aria-hidden />
             </button>
@@ -185,7 +185,7 @@ export function Layout() {
               type="button"
               onClick={() => setMobileNavOpen(true)}
               className="rounded-lg p-2 text-brand-text-muted hover:text-brand-text hover:bg-brand-bg transition-colors"
-              aria-label="Open navigation"
+              aria-label={t("nav_open")}
             >
               <Menu className="w-5 h-5" aria-hidden />
             </button>

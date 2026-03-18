@@ -295,7 +295,7 @@ export function WorkoutEdit() {
                                 className="min-w-[8rem] w-28 rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder"
                               />
                               <span className="text-brand-text-muted text-sm shrink-0">
-                                (s)
+                                {t("unit_s")}
                               </span>
                             </div>
                           )}

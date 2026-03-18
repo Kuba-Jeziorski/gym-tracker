@@ -6,7 +6,7 @@ export function LanguageSwitcher() {
   const { locale, setLocale, t } = useLanguage()
 
   return (
-    <div className="flex gap-2" role="group" aria-label="Language">
+    <div className="flex gap-2" role="group" aria-label={t('settings_languageHeading')}>
       {(['en', 'pl'] as const).map((loc) => (
         <button
           key={loc}
