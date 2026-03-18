@@ -56,24 +56,27 @@
 }
 
 @layer utilities {
+  /* Ensure react-select (classNamePrefix="gym-select") never overflows in flex layouts. */
+  .gym-select__control {
+    min-width: 0 !important;
+  }
+  .gym-select__value-container {
+    min-width: 0 !important;
+    flex-wrap: wrap;
+  }
+  .gym-select__multi-value {
+    max-width: 100%;
+  }
+  .gym-select__multi-value__label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
   .scroll-fade-bottom {
     position: relative;
   }
   .scroll-fade-bottom::after {
-    content: "";
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 8px;
-    height: 2.5rem;
-    background: linear-gradient(
-      to top,
-      var(--brand-bg) 0%,
-      rgba(13, 17, 23, 0.75) 50%,
-      transparent 100%
-    );
-    pointer-events: none;
-    transition: opacity 0.2s ease;
+    display: none;
   }
   .scroll-fade-bottom.at-bottom::after {
     opacity: 0;
@@ -82,21 +85,7 @@
     position: relative;
   }
   .scroll-fade-top::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 8px;
-    height: 2.5rem;
-    background: linear-gradient(
-      to bottom,
-      var(--brand-bg) 0%,
-      rgba(13, 17, 23, 0.75) 50%,
-      transparent 100%
-    );
-    pointer-events: none;
-    transition: opacity 0.2s ease;
-    z-index: 1;
+    display: none;
   }
   .scroll-fade-top.at-top::before {
     opacity: 0;

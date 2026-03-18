@@ -52,8 +52,9 @@ function WorkoutCard({
         "hover:border-brand-primary hover:bg-brand-primary/5 hover:shadow-md",
       )}
     >
-      <div className="grid grid-cols-3 min-h-[4.5rem]">
-        <div className="col-span-2 p-4 flex flex-col justify-center">
+      <div className="grid grid-cols-3 min-h-[4.5rem] max-[480px]:grid-cols-1">
+        {/* Desktop: exercises left */}
+        <div className="col-span-2 p-4 flex flex-col justify-center max-[480px]:hidden">
           {exerciseLabels.length > 0 ? (
             <ul className="text-sm text-brand-text-muted flex flex-wrap gap-2">
               {exerciseLabels.map((label, i) => (
@@ -62,15 +63,15 @@ function WorkoutCard({
                   {i < exerciseLabels.length - 1 && <span>·</span>}
                 </li>
               ))}
-              {more > 0 && (
-                <li className="text-brand-text-muted/80">+{more}</li>
-              )}
+              {more > 0 && <li className="text-brand-text-muted/80">+{more}</li>}
             </ul>
           ) : (
             <span className="text-sm text-brand-text-muted">—</span>
           )}
         </div>
-        <div className="col-span-1 border-l border-brand-border flex flex-col items-end justify-center gap-0.5 pr-4 my-4">
+
+        {/* Desktop: date/time right */}
+        <div className="col-span-1 border-l border-brand-border flex flex-col items-end justify-center gap-0.5 pr-4 my-4 max-[480px]:hidden">
           <p className="text-base font-medium text-brand-dark">
             {formatDMY(completedDate)}
           </p>
@@ -80,6 +81,39 @@ function WorkoutCard({
               minute: "2-digit",
             })}
           </p>
+        </div>
+
+        {/* Mobile (<480px): date/time top, exercises bottom */}
+        <div className="hidden max-[480px]:block">
+          <div className="px-4 py-3 flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-base font-medium text-brand-dark">
+                {formatDMY(completedDate)}
+              </p>
+              <p className="text-sm text-brand-text-muted">
+                {completedDate.toLocaleTimeString(undefined, {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </p>
+            </div>
+          </div>
+          <div className="h-px bg-brand-border mx-4" />
+          <div className="px-4 py-3">
+            {exerciseLabels.length > 0 ? (
+              <ul className="text-sm text-brand-text-muted flex flex-wrap gap-2">
+                {exerciseLabels.map((label, i) => (
+                  <li key={i} className="flex items-center gap-2">
+                    {label}
+                    {i < exerciseLabels.length - 1 && <span>·</span>}
+                  </li>
+                ))}
+                {more > 0 && <li className="text-brand-text-muted/80">+{more}</li>}
+              </ul>
+            ) : (
+              <span className="text-sm text-brand-text-muted">—</span>
+            )}
+          </div>
         </div>
       </div>
     </Link>

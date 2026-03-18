@@ -1,12 +1,15 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLanguage } from '../contexts/LanguageContext'
 import { useAuth } from '../contexts/AuthContext'
 import { useWeightUnit } from '../contexts/WeightUnitContext'
 import { useUserProfile } from '../contexts/UserProfileContext'
 import { kgToLb, lbToKg } from '../helpers/weightConversion'
 import { cn } from '../lib/utils'
+import { supabase } from '../services/supabaseClient'
+import { ConfirmModal } from '../components/ConfirmModal'
 
 type SaveUi = 'idle' | 'saving' | 'success' | 'error'
+type PasswordUi = 'idle' | 'saving' | 'success' | 'error'
 
 export function User() {
   const { t } = useLanguage()
@@ -26,6 +29,15 @@ export function User() {
   const [saveError, setSaveError] = useState('')
   const saveSuccessTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmNewPassword, setConfirmNewPassword] = useState('')
+  const [passwordUi, setPasswordUi] = useState<PasswordUi>('idle')
+  const [passwordError, setPasswordError] = useState('')
+
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deleteUi, setDeleteUi] = useState<'idle' | 'deleting' | 'error'>('idle')
+  const [deleteError, setDeleteError] = useState('')
+
   useEffect(() => {
     void refreshProfileFromServer()
   }, [refreshProfileFromServer])
@@ -33,6 +45,13 @@ export function User() {
   useEffect(() => {
     return () => {
       if (saveSuccessTimer.current) clearTimeout(saveSuccessTimer.current)
+    }
+  }, [])
+
+  const passwordSuccessTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => {
+    return () => {
+      if (passwordSuccessTimer.current) clearTimeout(passwordSuccessTimer.current)
     }
   }, [])
 
@@ -54,6 +73,50 @@ export function User() {
       setSaveUi('error')
       setSaveError(error ?? t('user_saveFailed'))
     }
+  }
+
+  const canSubmitPassword = useMemo(() => {
+    if (!newPassword.trim() || !confirmNewPassword.trim()) return false
+    return newPassword === confirmNewPassword
+  }, [newPassword, confirmNewPassword])
+
+  const handleChangePassword = async () => {
+    if (!canSubmitPassword) {
+      setPasswordUi('error')
+      setPasswordError(t('auth_error_passwordMismatch'))
+      return
+    }
+    if (passwordSuccessTimer.current) {
+      clearTimeout(passwordSuccessTimer.current)
+      passwordSuccessTimer.current = null
+    }
+    setPasswordUi('saving')
+    setPasswordError('')
+    const { error } = await supabase.auth.updateUser({ password: newPassword })
+    if (error) {
+      setPasswordUi('error')
+      setPasswordError(error.message)
+      return
+    }
+    setPasswordUi('success')
+    setNewPassword('')
+    setConfirmNewPassword('')
+    passwordSuccessTimer.current = setTimeout(() => {
+      setPasswordUi('idle')
+      passwordSuccessTimer.current = null
+    }, 2500)
+  }
+
+  const handleDeleteAccount = async () => {
+    setDeleteUi('deleting')
+    setDeleteError('')
+    const { error } = await supabase.rpc('delete_current_user')
+    if (error) {
+      setDeleteUi('error')
+      setDeleteError(error.message)
+      return
+    }
+    await signOut()
   }
 
   const weightDisplayValue =
@@ -217,12 +280,63 @@ export function User() {
       <section className="mt-8">
         <h2 className="text-lg font-medium text-brand-dark mb-4">{t('user_accountHeading')}</h2>
         <div className="space-y-3 max-w-md">
-          <button
-            type="button"
-            className="w-full rounded-lg border border-brand-border bg-brand-bg-soft px-4 py-2 text-sm font-medium text-brand-text hover:bg-brand-bg transition-colors"
-          >
-            {t('user_changePassword')}
-          </button>
+          <div className="rounded-xl border border-brand-border bg-brand-bg-soft p-4">
+            <h3 className="text-sm font-medium text-brand-dark mb-3">
+              {t('user_changePassword')}
+            </h3>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-brand-text-muted mb-1.5">
+                  {t('auth_newPassword')}
+                </label>
+                <input
+                  type="password"
+                  autoComplete="new-password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder={t('auth_passwordPlaceholder')}
+                  className="rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder w-full"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-brand-text-muted mb-1.5">
+                  {t('auth_confirmPassword')}
+                </label>
+                <input
+                  type="password"
+                  autoComplete="new-password"
+                  value={confirmNewPassword}
+                  onChange={(e) => setConfirmNewPassword(e.target.value)}
+                  placeholder={t('auth_passwordPlaceholder')}
+                  className="rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder w-full"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => void handleChangePassword()}
+                disabled={passwordUi === 'saving' || !canSubmitPassword}
+                className={cn(
+                  'w-full rounded-lg px-4 py-2 text-sm font-medium transition-colors',
+                  canSubmitPassword
+                    ? 'bg-brand-primary text-brand-bg hover:bg-brand-primary-hover'
+                    : 'border border-brand-border bg-brand-code-bg text-brand-text-muted cursor-not-allowed',
+                  'disabled:opacity-60 disabled:pointer-events-none',
+                )}
+              >
+                {passwordUi === 'saving' ? t('loading') : t('workoutEdit_save')}
+              </button>
+              {passwordUi === 'success' && (
+                <p className="text-sm text-brand-primary" role="status">
+                  {t('user_saved')}
+                </p>
+              )}
+              {passwordUi === 'error' && passwordError && (
+                <p className="text-sm text-red-400" role="alert">
+                  {passwordError}
+                </p>
+              )}
+            </div>
+          </div>
           <button
             type="button"
             onClick={() => signOut()}
@@ -232,12 +346,33 @@ export function User() {
           </button>
           <button
             type="button"
+            onClick={() => {
+              setDeleteUi('idle')
+              setDeleteError('')
+              setDeleteOpen(true)
+            }}
             className="w-full rounded-lg border border-red-500/60 bg-brand-bg-soft px-4 py-2 text-sm font-medium text-red-400 hover:bg-red-500/10 transition-colors"
           >
             {t('user_deleteAccount')}
           </button>
         </div>
       </section>
+
+      <ConfirmModal
+        open={deleteOpen}
+        title={t('user_deleteAccount')}
+        message={t('user_deleteAccountConfirm')}
+        confirmLabel={deleteUi === 'deleting' ? t('loading') : t('common_yes')}
+        cancelLabel={t('common_no')}
+        onConfirm={() => void handleDeleteAccount()}
+        onCancel={() => setDeleteOpen(false)}
+        variant="danger"
+      />
+      {deleteUi === 'error' && deleteError && (
+        <p className="text-sm text-red-400 mt-3 max-w-md" role="alert">
+          {deleteError}
+        </p>
+      )}
     </div>
   )
 }

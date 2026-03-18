@@ -1,16 +1,22 @@
 import {
   createContext,
   useContext,
-  useState,
   useCallback,
-  useEffect,
+  useMemo,
   type ReactNode,
 } from "react";
 import type { Exercise } from "../data/exercises";
 import { exercises as builtinExercises } from "../data/exercises";
 import { slugify } from "../helpers/slugify";
-
-const STORAGE_KEY = "gym-tracker-custom-exercises";
+import { useAuth } from "./AuthContext";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  deleteCustomExerciseByUniqueName,
+  fetchCustomExercises,
+  insertCustomExercise,
+  toExercise,
+  updateCustomExerciseByUniqueName,
+} from "../services/exercisesDb";
 
 type CustomExercisesContextValue = {
   customExercises: Exercise[];
@@ -25,88 +31,111 @@ type CustomExercisesContextValue = {
 
 const CustomExercisesContext = createContext<CustomExercisesContextValue | null>(null);
 
-function loadFromStorage(): Exercise[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as unknown;
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveToStorage(list: Exercise[]) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-}
-
 export function CustomExercisesProvider({ children }: { children: ReactNode }) {
-  const [customExercises, setCustomExercises] = useState<Exercise[]>([]);
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    setCustomExercises(loadFromStorage());
-  }, []);
+  const customExercisesQuery = useQuery({
+    queryKey: ["customExercises", userId],
+    enabled: Boolean(userId),
+    queryFn: async () => {
+      const { data, error } = await fetchCustomExercises(userId!);
+      if (error) throw error;
+      return (data ?? []).map(toExercise);
+    },
+  });
 
-  const allExercises = [...builtinExercises, ...customExercises];
+  const customExercises = customExercisesQuery.data ?? [];
+  const allExercises = useMemo(
+    () => [...builtinExercises, ...customExercises],
+    [customExercises],
+  );
+
+  const addMutation = useMutation({
+    mutationFn: async (exercise: Omit<Exercise, "unique_name">) => {
+      if (!userId) return;
+      const baseSlug = "custom_" + slugify(exercise.name);
+      if (!baseSlug.replace("custom_", "")) return;
+
+      const existing = [...builtinExercises, ...(customExercisesQuery.data ?? [])];
+      let uniqueName = baseSlug;
+      let n = 0;
+      while (existing.some((e) => e.unique_name === uniqueName)) {
+        n += 1;
+        uniqueName = `${baseSlug}_${n}`;
+      }
+
+      const { error } = await insertCustomExercise({
+        user_id: userId,
+        unique_name: uniqueName,
+        name: exercise.name.trim(),
+        weight: Boolean(exercise.weight),
+        reps: Boolean(exercise.reps),
+        time: Boolean(exercise.time),
+        main_muscle_group: exercise.main_muscle_group ?? "",
+        all_muscle_groups: exercise.all_muscle_groups ?? [],
+      });
+      if (error) throw error;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["customExercises", userId] });
+    },
+  });
 
   const addCustomExercise = useCallback(
     (exercise: Omit<Exercise, "unique_name">) => {
-      const baseSlug = "custom_" + slugify(exercise.name);
-      if (!baseSlug.replace("custom_", "")) return;
-      setCustomExercises((prev) => {
-        const existing = [...builtinExercises, ...prev];
-        let uniqueName = baseSlug;
-        let n = 0;
-        while (existing.some((e) => e.unique_name === uniqueName)) {
-          n += 1;
-          uniqueName = `${baseSlug}_${n}`;
-        }
-        const full: Exercise = {
-          ...exercise,
-          unique_name: uniqueName,
-          main_muscle_group: exercise.main_muscle_group ?? "",
-          all_muscle_groups: exercise.all_muscle_groups ?? [],
-        };
-        const next = [...prev, full];
-        saveToStorage(next);
-        return next;
-      });
+      addMutation.mutate(exercise);
     },
-    [],
+    [addMutation],
   );
+
+  const updateMutation = useMutation({
+    mutationFn: async ({
+      uniqueName,
+      exercise,
+    }: {
+      uniqueName: string;
+      exercise: Omit<Exercise, "unique_name">;
+    }) => {
+      if (!userId) return;
+      const { error } = await updateCustomExerciseByUniqueName(userId, uniqueName, {
+        name: exercise.name.trim(),
+        weight: Boolean(exercise.weight),
+        reps: Boolean(exercise.reps),
+        time: Boolean(exercise.time),
+        main_muscle_group: exercise.main_muscle_group ?? "",
+        all_muscle_groups: exercise.all_muscle_groups ?? [],
+        updated_at: new Date().toISOString(),
+      });
+      if (error) throw error;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["customExercises", userId] });
+    },
+  });
 
   const updateCustomExercise = useCallback(
     (uniqueName: string, exercise: Omit<Exercise, "unique_name">) => {
-      setCustomExercises((prev) => {
-        const next = prev.map((e) =>
-          e.unique_name === uniqueName
-            ? {
-                ...e,
-                name: exercise.name.trim(),
-                weight: exercise.weight,
-                reps: exercise.reps,
-                time: exercise.time,
-                main_muscle_group: exercise.main_muscle_group ?? "",
-                all_muscle_groups: exercise.all_muscle_groups ?? [],
-              }
-            : e,
-        );
-        saveToStorage(next);
-        return next;
-      });
+      updateMutation.mutate({ uniqueName, exercise });
     },
-    [],
+    [updateMutation],
   );
 
+  const removeMutation = useMutation({
+    mutationFn: async (uniqueName: string) => {
+      if (!userId) return;
+      const { error } = await deleteCustomExerciseByUniqueName(userId, uniqueName);
+      if (error) throw error;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["customExercises", userId] });
+    },
+  });
+
   const removeCustomExercise = useCallback((uniqueName: string) => {
-    setCustomExercises((prev) => {
-      const next = prev.filter((e) => e.unique_name !== uniqueName);
-      saveToStorage(next);
-      return next;
-    });
-  }, []);
+    removeMutation.mutate(uniqueName);
+  }, [removeMutation]);
 
   return (
     <CustomExercisesContext.Provider

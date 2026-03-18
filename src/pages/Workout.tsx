@@ -10,7 +10,7 @@ import { useAllExercises } from "../contexts/CustomExercisesContext";
 import type { StoredWorkout } from "../data/workoutStorage";
 import { inputWeightToKg } from "../helpers/weightConversion";
 import { Select } from "../components/Select";
-import { CircleMinus } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { ConfirmModal } from "../components/ConfirmModal";
 import { routes } from "../routes";
 import { cn } from "../lib/utils";
@@ -367,7 +367,7 @@ export function Workout() {
                     onClick={() => removeExercise(index)}
                     className="text-brand-text-muted hover:text-brand-text text-sm"
                   >
-                    {t("workout_remove")}
+                    {t("workout_removeExercise")}
                   </button>
                 </div>
 
@@ -387,67 +387,91 @@ export function Workout() {
                       return (
                         <div
                           key={setIndex}
-                          className="flex flex-wrap items-center gap-2 gap-y-2 text-sm"
+                          className={cn(
+                            "text-sm",
+                            "max-[480px]:rounded-lg max-[480px]:border max-[480px]:border-brand-border max-[480px]:bg-brand-bg max-[480px]:p-3",
+                          )}
                         >
+                          <div className="flex flex-wrap items-center gap-2 gap-y-2">
+                            {exercise.weight && (
+                              <div className="flex items-center gap-1.5 mr-5 max-[480px]:mr-0">
+                                <input
+                                  type="number"
+                                  placeholder={weightPlaceholder}
+                                  {...register(
+                                    `exercises.${index}.sets.${setIndex}.weight` as const,
+                                  )}
+                                  className="min-w-[8rem] w-28 rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder"
+                                />
+                                <span className="text-brand-text-muted text-sm shrink-0">
+                                  {t(weightUnit === "kg" ? "unit_kg" : "unit_lb")}
+                                </span>
+                              </div>
+                            )}
+                            {exercise.reps && (
+                              <>
+                                <input
+                                  type="number"
+                                  placeholder={repsPlaceholder}
+                                  {...register(
+                                    `exercises.${index}.sets.${setIndex}.reps` as const,
+                                  )}
+                                  className="min-w-[8rem] w-24 rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder"
+                                />
+                                <span className="text-brand-text-muted text-sm shrink-0">
+                                  {t("workout_reps")}
+                                </span>
+                              </>
+                            )}
+                            {exercise.time && (
+                              <div className="flex items-center gap-1.5">
+                                <input
+                                  type="number"
+                                  placeholder={timePlaceholder}
+                                  {...register(
+                                    `exercises.${index}.sets.${setIndex}.time` as const,
+                                  )}
+                                  className="min-w-[8rem] w-28 rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder"
+                                />
+                                <span className="text-brand-text-muted text-sm shrink-0">
+                                  (s)
+                                </span>
+                              </div>
+                            )}
+                          </div>
+
                           <button
                             type="button"
                             onClick={() =>
                               setRemoveSetTarget({ exerciseIndex: index, setIndex })
                             }
                             className={cn(
+                              "mt-2 hidden max-[480px]:flex",
+                              "w-full items-center justify-center gap-2",
+                              "rounded-lg border border-brand-border bg-brand-bg px-3 py-2",
+                              "text-sm font-medium text-brand-text-muted",
+                              "hover:text-red-400 hover:border-red-500/40 hover:bg-red-500/5 transition-colors",
+                            )}
+                          >
+                            <Trash2 className="size-4" aria-hidden />
+                            {t("workout_removeSet")}
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setRemoveSetTarget({ exerciseIndex: index, setIndex })
+                            }
+                            className={cn(
+                              "max-[480px]:hidden",
                               "shrink-0 rounded p-1 transition-colors",
                               "text-brand-text-muted hover:text-red-400 active:text-red-400 focus-visible:text-red-400 focus-visible:outline-none",
                             )}
                             title={t("workout_removeSet")}
                             aria-label={t("workout_removeSet")}
                           >
-                            <CircleMinus className="size-5" />
+                            <Trash2 className="size-5" aria-hidden />
                           </button>
-                          {exercise.weight && (
-                            <div className="flex items-center gap-1.5 mr-5">
-                              <input
-                                type="number"
-                                placeholder={weightPlaceholder}
-                                {...register(
-                                  `exercises.${index}.sets.${setIndex}.weight` as const,
-                                )}
-                                className="min-w-[8rem] w-28 rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder"
-                              />
-                              <span className="text-brand-text-muted text-sm shrink-0">
-                                {t(weightUnit === "kg" ? "unit_kg" : "unit_lb")}
-                              </span>
-                            </div>
-                          )}
-                          {exercise.reps && (
-                            <>
-                              <input
-                                type="number"
-                                placeholder={repsPlaceholder}
-                                {...register(
-                                  `exercises.${index}.sets.${setIndex}.reps` as const,
-                                )}
-                                className="min-w-[8rem] w-24 rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder"
-                              />
-                              <span className="text-brand-text-muted text-sm shrink-0">
-                                {t("workout_reps")}
-                              </span>
-                            </>
-                          )}
-                          {exercise.time && (
-                            <div className="flex items-center gap-1.5">
-                              <input
-                                type="number"
-                                placeholder={timePlaceholder}
-                                {...register(
-                                  `exercises.${index}.sets.${setIndex}.time` as const,
-                                )}
-                                className="min-w-[8rem] w-28 rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder"
-                              />
-                              <span className="text-brand-text-muted text-sm shrink-0">
-                                (s)
-                              </span>
-                            </div>
-                          )}
                         </div>
                       );
                     })}

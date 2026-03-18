@@ -1,14 +1,19 @@
 import {
   createContext,
   useContext,
-  useState,
   useCallback,
-  useEffect,
   type ReactNode,
 } from "react";
 import type { WorkoutTemplate } from "../data/workoutTemplates";
-
-const STORAGE_KEY = "gym-tracker-templates";
+import { useAuth } from "./AuthContext";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  deleteTemplateById,
+  fetchTemplates,
+  insertTemplate,
+  toWorkoutTemplate,
+  updateTemplateById,
+} from "../services/templatesDb";
 
 type WorkoutTemplatesContextValue = {
   templates: WorkoutTemplate[];
@@ -19,23 +24,6 @@ type WorkoutTemplatesContextValue = {
 };
 
 const WorkoutTemplatesContext = createContext<WorkoutTemplatesContextValue | null>(null);
-
-function loadFromStorage(): WorkoutTemplate[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as unknown;
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveToStorage(list: WorkoutTemplate[]) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-}
 
 function normalizeName(name: string): string {
   return name.trim().toLowerCase();
@@ -54,45 +42,96 @@ function hasDuplicateName(
 }
 
 export function WorkoutTemplatesProvider({ children }: { children: ReactNode }) {
-  const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    setTemplates(loadFromStorage());
-  }, []);
+  const templatesQuery = useQuery({
+    queryKey: ["templates", userId],
+    enabled: Boolean(userId),
+    queryFn: async () => {
+      const { data, error } = await fetchTemplates(userId!);
+      if (error) throw error;
+      return (data ?? []).map(toWorkoutTemplate);
+    },
+  });
 
-  const addTemplate = useCallback((template: Omit<WorkoutTemplate, "id">) => {
-    setTemplates((prev) => {
-      if (hasDuplicateName(prev, template.name)) return prev;
-      const full: WorkoutTemplate = {
-        ...template,
-        id: crypto.randomUUID(),
-      };
-      const next = [...prev, full];
-      saveToStorage(next);
-      return next;
-    });
-  }, []);
+  const templates = templatesQuery.data ?? [];
 
-  const removeTemplate = useCallback((id: string) => {
-    setTemplates((prev) => {
-      const next = prev.filter((t) => t.id !== id);
-      saveToStorage(next);
-      return next;
-    });
-  }, []);
+  const insertMutation = useMutation({
+    mutationFn: async (template: Omit<WorkoutTemplate, "id">) => {
+      if (!userId) return;
+      const { error } = await insertTemplate({
+        user_id: userId,
+        name: template.name.trim(),
+        exercise_unique_names: template.exerciseUniqueNames ?? [],
+      });
+      if (error) throw error;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["templates", userId] });
+    },
+  });
 
-  const updateTemplate = useCallback((id: string, template: Omit<WorkoutTemplate, "id">) => {
-    setTemplates((prev) => {
-      if (hasDuplicateName(prev, template.name, id)) return prev;
-      const next = prev.map((t) => (t.id === id ? { ...t, ...template } : t));
-      saveToStorage(next);
-      return next;
-    });
-  }, []);
+  const addTemplate = useCallback(
+    (template: Omit<WorkoutTemplate, "id">) => {
+      if (!userId) return;
+      if (hasDuplicateName(templates, template.name)) return;
+      insertMutation.mutate(template);
+    },
+    [insertMutation, templates, userId],
+  );
+
+  const updateMutation = useMutation({
+    mutationFn: async ({
+      id,
+      template,
+    }: {
+      id: string;
+      template: Omit<WorkoutTemplate, "id">;
+    }) => {
+      if (!userId) return;
+      const { error } = await updateTemplateById(userId, id, {
+        name: template.name.trim(),
+        exercise_unique_names: template.exerciseUniqueNames ?? [],
+        updated_at: new Date().toISOString(),
+      });
+      if (error) throw error;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["templates", userId] });
+    },
+  });
+
+  const updateTemplate = useCallback(
+    (id: string, template: Omit<WorkoutTemplate, "id">) => {
+      if (!userId) return;
+      if (hasDuplicateName(templates, template.name, id)) return;
+      updateMutation.mutate({ id, template });
+    },
+    [templates, updateMutation, userId],
+  );
+
+  const removeMutation = useMutation({
+    mutationFn: async (id: string) => {
+      if (!userId) return;
+      const { error } = await deleteTemplateById(userId, id);
+      if (error) throw error;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["templates", userId] });
+    },
+  });
+
+  const removeTemplate = useCallback(
+    (id: string) => {
+      removeMutation.mutate(id);
+    },
+    [removeMutation],
+  );
 
   const isTemplateNameTaken = useCallback(
-    (name: string, excludeId?: string) =>
-      hasDuplicateName(templates, name, excludeId),
+    (name: string, excludeId?: string) => hasDuplicateName(templates, name, excludeId),
     [templates],
   );
 

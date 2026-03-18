@@ -38,6 +38,7 @@ export function Exercises() {
     updateCustomExercise,
     removeCustomExercise,
   } = useCustomExercises();
+  const [formOpen, setFormOpen] = useState(false);
   const [name, setName] = useState("");
   const [weight, setWeight] = useState(false);
   const [reps, setReps] = useState(false);
@@ -75,6 +76,10 @@ export function Exercises() {
     checkScroll();
   }, [allExercises.length, checkScroll]);
 
+  useEffect(() => {
+    if (editTarget) setFormOpen(true);
+  }, [editTarget]);
+
   const resetForm = useCallback(() => {
     setName("");
     setWeight(false);
@@ -83,6 +88,7 @@ export function Exercises() {
     setMainMuscleGroup("");
     setAllMuscleGroups([]);
     setEditTarget(null);
+    setFormOpen(false);
   }, []);
 
   const handleEdit = useCallback((ex: Exercise) => {
@@ -127,7 +133,7 @@ export function Exercises() {
   };
 
   return (
-    <div className="flex flex-col h-full min-h-0 gap-4">
+    <div className="flex flex-col flex-1 min-h-0 gap-4">
       <header className="shrink-0">
         <h1 className="text-2xl font-semibold text-brand-dark mb-2">
           {t("exercises_title")}
@@ -135,10 +141,29 @@ export function Exercises() {
         <p className="text-brand-text-muted">{t("exercises_description")}</p>
       </header>
 
+      <div className="max-[640px]:block hidden shrink-0">
+        <button
+          type="button"
+          onClick={() => setFormOpen((v) => !v)}
+          className={cn(
+            "w-full rounded-lg border px-4 py-2 text-sm font-medium transition-colors",
+            formOpen
+              ? "border-brand-border bg-brand-bg-soft text-brand-text"
+              : "border-transparent bg-brand-primary text-brand-bg hover:bg-brand-primary-hover",
+          )}
+        >
+          {formOpen ? t("workoutEdit_cancel") : t("exercises_add")}
+        </button>
+      </div>
+
       <form
         ref={formRef}
         onSubmit={handleSubmit}
-        className="shrink-0 rounded-xl border border-brand-border bg-brand-bg-soft p-4 flex flex-col gap-4"
+        className={cn(
+          "shrink-0 rounded-xl border border-brand-border bg-brand-bg-soft p-4 flex flex-col gap-4",
+          "max-[640px]:rounded-lg",
+          !formOpen && !editTarget && "max-[640px]:hidden",
+        )}
       >
         <h2 className="text-lg font-medium text-brand-dark mb-3">
           {editTarget ? t("exercises_editTitle") : t("exercises_add")}
@@ -153,10 +178,10 @@ export function Exercises() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder={t("exercises_namePlaceholder")}
-              className="rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder min-w-[16rem]"
+              className="rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder min-w-0 w-full sm:min-w-[16rem] sm:w-auto"
             />
           </label>
-          <div className="flex items-center gap-6 h-[42px]">
+          <div className="flex items-center gap-6 min-h-[42px] flex-wrap">
             <Switch
               checked={weight}
               onChange={setWeight}
@@ -174,8 +199,8 @@ export function Exercises() {
             />
           </div>
         </div>
-        <div className="flex items-center gap-4">
-          <label className="flex flex-col gap-2">
+        <div className="flex flex-wrap items-start lg:items-end gap-4 max-lg:flex-col">
+          <label className="flex flex-col gap-2 min-w-0 max-lg:w-full max-lg:max-w-[400px]">
             <span className="text-sm text-brand-text-muted">
               {t("exercises_mainMuscleGroup")}
             </span>
@@ -184,14 +209,14 @@ export function Exercises() {
               onChange={setMainMuscleGroup}
               options={muscleGroupOptions}
               placeholder="—"
-              className="min-w-[12rem]"
+              className="min-w-0 w-full sm:min-w-[12rem] sm:w-auto"
             />
           </label>
-          <label className="flex flex-col gap-2">
+          <label className="flex flex-col gap-2 min-w-0 flex-1 max-lg:w-full max-lg:max-w-[400px]">
             <span className="text-sm text-brand-text-muted">
               {t("exercises_allMuscleGroups")}
             </span>
-            <div className="min-w-[24rem]">
+            <div className="min-w-0 w-full sm:min-w-[24rem] overflow-hidden">
               <SelectLib<MuscleOption, true>
                 isMulti
                 value={allMuscleGroups.map((value) => ({
@@ -209,6 +234,7 @@ export function Exercises() {
                 placeholder="—"
                 styles={selectStyles}
                 classNamePrefix="gym-select"
+                className="min-w-0"
               />
             </div>
           </label>
@@ -252,29 +278,34 @@ export function Exercises() {
           className="h-full overflow-y-auto"
           onScroll={checkScroll}
         >
-          <ul className="space-y-2 pr-1 pb-2">
+          <ul className="space-y-2 pr-3 pb-2">
             {sortedExercises.map((ex) => (
               <li
                 key={ex.unique_name}
-                className="flex items-center justify-between gap-2 rounded-lg border border-brand-border bg-brand-bg-soft px-4 py-3"
+                className={cn(
+                  "rounded-lg border border-brand-border bg-brand-bg-soft px-4 py-3",
+                  "flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between",
+                )}
               >
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-medium text-brand-dark">
-                    {getExerciseDisplayName(ex, t)}
-                  </span>
-                  <span
-                    className={cn(
-                      "text-xs px-2 py-0.5 rounded",
-                      isCustom(ex)
-                        ? "bg-brand-primary/15 text-brand-primary"
-                        : "bg-brand-border/50 text-brand-text-muted",
-                    )}
-                  >
-                    {isCustom(ex)
-                      ? t("exercises_custom")
-                      : t("exercises_builtIn")}
-                  </span>
-                  <span className="text-sm text-brand-text-muted">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-medium text-brand-dark">
+                      {getExerciseDisplayName(ex, t)}
+                    </span>
+                    <span
+                      className={cn(
+                        "text-xs px-2 py-0.5 rounded",
+                        isCustom(ex)
+                          ? "bg-brand-primary/15 text-brand-primary"
+                          : "bg-brand-border/50 text-brand-text-muted",
+                      )}
+                    >
+                      {isCustom(ex)
+                        ? t("exercises_custom")
+                        : t("exercises_builtIn")}
+                    </span>
+                  </div>
+                  <div className="text-sm text-brand-text-muted mt-1">
                     {[
                       ex.weight && t("workout_weight"),
                       ex.reps && t("workout_reps"),
@@ -290,21 +321,27 @@ export function Exercises() {
                     ]
                       .filter(Boolean)
                       .join(" · ")}
-                  </span>
+                  </div>
                 </div>
                 {isCustom(ex) && (
-                  <div className="flex items-center gap-2">
+                  <div className="flex gap-2 sm:items-center sm:justify-end">
                     <button
                       type="button"
                       onClick={() => handleEdit(ex)}
-                      className="text-sm text-brand-text-muted hover:text-brand-primary transition-colors"
+                      className={cn(
+                        "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                        "border border-brand-border text-brand-text-muted hover:bg-brand-bg-soft",
+                      )}
                     >
                       {t("exercises_edit")}
                     </button>
                     <button
                       type="button"
                       onClick={() => setRemoveTarget(ex.unique_name)}
-                      className="text-sm text-brand-text-muted hover:text-red-400 transition-colors"
+                      className={cn(
+                        "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                        "border border-brand-border text-brand-text-muted hover:bg-brand-bg-soft hover:text-red-400 hover:border-red-500/40",
+                      )}
                     >
                       {t("workout_remove")}
                     </button>

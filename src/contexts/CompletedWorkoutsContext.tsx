@@ -1,12 +1,13 @@
 import {
   createContext,
   useContext,
-  useState,
   useCallback,
-  useEffect,
   type ReactNode,
 } from 'react'
 import type { StoredWorkout } from '../data/workoutStorage'
+import { useAuth } from './AuthContext'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { deleteTrainingById, fetchTrainings, type TrainingRow, toStoredWorkout, updateTrainingById, upsertTraining } from '../services/trainingsDb'
 
 type CompletedWorkoutsContextValue = {
   workouts: StoredWorkout[]
@@ -18,65 +19,81 @@ type CompletedWorkoutsContextValue = {
 
 const CompletedWorkoutsContext = createContext<CompletedWorkoutsContextValue | null>(null)
 
-const WORKOUTS_JSON_URL = '/workouts.json'
-const STORAGE_KEY = 'gym-tracker-workouts'
-
-function loadFromStorage(): StoredWorkout[] {
-  if (typeof window === 'undefined') return []
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return []
-    const parsed = JSON.parse(raw) as unknown
-    return Array.isArray(parsed) ? parsed : []
-  } catch {
-    return []
-  }
-}
-
-function saveToStorage(list: StoredWorkout[]) {
-  if (typeof window === 'undefined') return
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(list))
-}
-
 export function CompletedWorkoutsProvider({ children }: { children: ReactNode }) {
-  const [workouts, setWorkouts] = useState<StoredWorkout[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const { user } = useAuth()
+  const userId = user?.id ?? null
+  const queryClient = useQueryClient()
 
-  useEffect(() => {
-    fetch(WORKOUTS_JSON_URL)
-      .then((res) => (res.ok ? res.json() : []))
-      .then((data: unknown) => {
-        const fromFile = Array.isArray(data) ? data : []
-        const fromStorage = loadFromStorage()
-        setWorkouts(fromStorage.length > 0 ? fromStorage : fromFile)
+  const trainingsQuery = useQuery({
+    queryKey: ['trainings', userId],
+    enabled: Boolean(userId),
+    queryFn: async () => {
+      const { data, error } = await fetchTrainings(userId!)
+      if (error) throw error
+      return ((data ?? []) as TrainingRow[]).map(toStoredWorkout)
+    },
+  })
+
+  const workouts = trainingsQuery.data ?? []
+  const isLoading = trainingsQuery.isLoading
+
+  const appendMutation = useMutation({
+    mutationFn: async (workout: StoredWorkout) => {
+      if (!userId) return
+      const { error } = await upsertTraining({
+        id: workout.id,
+        user_id: userId,
+        template_id: null,
+        started_at: workout.startedAt,
+        completed_at: workout.completedAt,
+        exercises: workout.exercises ?? [],
+        notes: '',
       })
-      .catch(() => setWorkouts(loadFromStorage()))
-      .finally(() => setIsLoading(false))
-  }, [])
+      if (error) throw error
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['trainings', userId] })
+    },
+  })
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, workout }: { id: string; workout: StoredWorkout }) => {
+      if (!userId) return
+      const { error } = await updateTrainingById(userId, id, {
+        started_at: workout.startedAt,
+        completed_at: workout.completedAt,
+        exercises: workout.exercises ?? [],
+        updated_at: new Date().toISOString(),
+      })
+      if (error) throw error
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['trainings', userId] })
+    },
+  })
+
+  const removeMutation = useMutation({
+    mutationFn: async (id: string) => {
+      if (!userId) return
+      const { error } = await deleteTrainingById(userId, id)
+      if (error) throw error
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['trainings', userId] })
+    },
+  })
 
   const appendWorkout = useCallback((workout: StoredWorkout) => {
-    setWorkouts((prev) => {
-      const next = [...prev, workout]
-      saveToStorage(next)
-      return next
-    })
-  }, [])
+    appendMutation.mutate(workout)
+  }, [appendMutation])
 
   const updateWorkout = useCallback((id: string, workout: StoredWorkout) => {
-    setWorkouts((prev) => {
-      const next = prev.map((w) => (w.id === id ? workout : w))
-      saveToStorage(next)
-      return next
-    })
-  }, [])
+    updateMutation.mutate({ id, workout })
+  }, [updateMutation])
 
   const removeWorkout = useCallback((id: string) => {
-    setWorkouts((prev) => {
-      const next = prev.filter((w) => w.id !== id)
-      saveToStorage(next)
-      return next
-    })
-  }, [])
+    removeMutation.mutate(id)
+  }, [removeMutation])
 
   return (
     <CompletedWorkoutsContext.Provider value={{ workouts, appendWorkout, updateWorkout, removeWorkout, isLoading }}>
