@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm, useFieldArray, Controller } from "react-hook-form";
+import type { UseFormRegisterReturn } from "react-hook-form";
 import { useCurrentWorkout } from "../contexts/CurrentWorkoutContext";
 import { useWorkoutTemplates } from "../contexts/WorkoutTemplatesContext";
 import { useLanguage } from "../contexts/LanguageContext";
@@ -13,6 +14,7 @@ import { Select } from "../components/Select";
 import { ConfirmModal } from "../components/ConfirmModal";
 import { routes } from "../routes";
 import { cn } from "../lib/utils";
+import { restoreViewportAfterInputBlur } from "../helpers/restoreViewportAfterInputBlur";
 
 type SetValues = {
   weight?: string;
@@ -68,6 +70,19 @@ function isSetValidForExercise(
   if (exercise.reps && !(set.reps?.trim() ?? "")) return false;
   if (exercise.time && !(set.time?.trim() ?? "")) return false;
   return true;
+}
+
+function mergeRegisterWithViewportReset(
+  field: UseFormRegisterReturn,
+): UseFormRegisterReturn {
+  return {
+    ...field,
+    onBlur: (e) => {
+      const r = field.onBlur(e);
+      restoreViewportAfterInputBlur();
+      return r;
+    },
+  };
 }
 
 function canFinishWorkout(
@@ -174,10 +189,15 @@ export function Workout() {
   }));
 
   const onFinish = handleSubmit((data) => {
+    const templateForSave = currentWorkout!.templateId
+      ? templates.find((t) => t.id === currentWorkout!.templateId)
+      : undefined;
     const stored: StoredWorkout = {
       id: currentWorkout!.id,
       startedAt: currentWorkout!.startedAt,
       completedAt: new Date().toISOString(),
+      templateId: currentWorkout!.templateId ?? null,
+      templateName: templateForSave?.name?.trim() || null,
       exercises: data.exercises.map((ex) => {
         const mapped = (ex.sets ?? []).map((s) => ({
           weight: inputWeightToKg(s.weight ?? "", weightUnit),
@@ -343,7 +363,7 @@ export function Workout() {
           atTop && "at-top",
         )}
       >
-        <div className="rounded-lg border border-brand-border bg-brand-bg-soft p-4 mb-4 flex flex-col flex-1 min-h-0">
+        <div className="rounded-lg border border-brand-border bg-brand-bg-soft p-4 mb-4 flex flex-col flex-1 min-h-0 xs:border-0 xs:p-0">
           <ul
             ref={exerciseListScrollRef}
             onScroll={checkScroll}
@@ -433,8 +453,10 @@ export function Workout() {
                                   <input
                                     type="number"
                                     placeholder={weightPlaceholder}
-                                    {...register(
-                                      `exercises.${index}.sets.${setIndex}.weight` as const,
+                                    {...mergeRegisterWithViewportReset(
+                                      register(
+                                        `exercises.${index}.sets.${setIndex}.weight` as const,
+                                      ),
                                     )}
                                     className="min-w-[8rem] w-28 rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder"
                                   />
@@ -452,8 +474,10 @@ export function Workout() {
                                   <input
                                     type="number"
                                     placeholder={repsPlaceholder}
-                                    {...register(
-                                      `exercises.${index}.sets.${setIndex}.reps` as const,
+                                    {...mergeRegisterWithViewportReset(
+                                      register(
+                                        `exercises.${index}.sets.${setIndex}.reps` as const,
+                                      ),
                                     )}
                                     className="min-w-[8rem] w-24 rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder"
                                   />
@@ -467,8 +491,10 @@ export function Workout() {
                                   <input
                                     type="number"
                                     placeholder={timePlaceholder}
-                                    {...register(
-                                      `exercises.${index}.sets.${setIndex}.time` as const,
+                                    {...mergeRegisterWithViewportReset(
+                                      register(
+                                        `exercises.${index}.sets.${setIndex}.time` as const,
+                                      ),
                                     )}
                                     className="min-w-[8rem] w-28 rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder"
                                   />

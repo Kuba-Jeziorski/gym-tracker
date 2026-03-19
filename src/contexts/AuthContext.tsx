@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from "react";
 import { supabase } from "../services/supabaseClient";
+import { routes } from "../routes";
 import type { User } from "@supabase/supabase-js";
 
 export type SignUpUserMetadata = {
@@ -62,12 +63,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password: string,
       metadata?: SignUpUserMetadata
     ) => {
+      const emailRedirectTo =
+        typeof window !== "undefined"
+          ? `${window.location.origin}${routes.auth}`
+          : undefined;
       const { error } = await supabase.auth.signUp({
         email,
         password,
-        options: metadata
-          ? { data: metadata as Record<string, string> }
-          : undefined,
+        options: {
+          ...(metadata ? { data: metadata as Record<string, string> } : {}),
+          ...(emailRedirectTo ? { emailRedirectTo } : {}),
+        },
       });
       return { error: error ?? null };
     },

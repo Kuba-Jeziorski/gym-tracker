@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useCompletedWorkouts } from "../contexts/CompletedWorkoutsContext";
+import { useWorkoutTemplates } from "../contexts/WorkoutTemplatesContext";
 import { useAllExercises } from "../contexts/CustomExercisesContext";
 import { routes } from "../routes";
 import type { StoredWorkout } from "../data/workoutStorage";
@@ -28,10 +29,13 @@ function getExerciseDisplayName(
 function WorkoutCard({
   workout,
   allExercises,
+  templateName,
   t,
 }: {
   workout: StoredWorkout;
   allExercises: { unique_name: string; name: string }[];
+  /** Resolved from current templates when this workout was saved with a template. */
+  templateName?: string;
   t: (key: string) => string;
 }) {
   const completedDate = new Date(workout.completedAt);
@@ -54,7 +58,15 @@ function WorkoutCard({
     >
       <div className="grid grid-cols-3 min-h-[4.5rem] xs:grid-cols-1">
         {/* Desktop: exercises left */}
-        <div className="col-span-2 p-4 flex flex-col justify-center xs:hidden">
+        <div className="col-span-2 p-4 flex flex-col justify-end xs:hidden">
+          {templateName ? (
+            <p className="text-sm leading-snug text-brand-text mb-2 shrink-0">
+              <span className="text-brand-text-muted">
+                {t("workout_templateLabel")}:{" "}
+              </span>
+              <span className="font-semibold">{templateName}</span>
+            </p>
+          ) : null}
           {exerciseLabels.length > 0 ? (
             <ul className="text-sm text-brand-text-muted flex flex-wrap gap-2">
               {exerciseLabels.map((label, i) => (
@@ -63,7 +75,9 @@ function WorkoutCard({
                   {i < exerciseLabels.length - 1 && <span>·</span>}
                 </li>
               ))}
-              {more > 0 && <li className="text-brand-text-muted/80">+{more}</li>}
+              {more > 0 && (
+                <li className="text-brand-text-muted/80">+{more}</li>
+              )}
             </ul>
           ) : (
             <span className="text-sm text-brand-text-muted">—</span>
@@ -100,6 +114,14 @@ function WorkoutCard({
           </div>
           <div className="h-px bg-brand-border mx-4" />
           <div className="px-4 py-3">
+            {templateName ? (
+              <p className="text-sm leading-snug text-brand-text mb-2">
+                <span className="text-brand-text-muted">
+                  {t("workout_templateLabel")}:{" "}
+                </span>
+                <span className="font-semibold">{templateName}</span>
+              </p>
+            ) : null}
             {exerciseLabels.length > 0 ? (
               <ul className="text-sm text-brand-text-muted flex flex-wrap gap-2">
                 {exerciseLabels.map((label, i) => (
@@ -108,7 +130,9 @@ function WorkoutCard({
                     {i < exerciseLabels.length - 1 && <span>·</span>}
                   </li>
                 ))}
-                {more > 0 && <li className="text-brand-text-muted/80">+{more}</li>}
+                {more > 0 && (
+                  <li className="text-brand-text-muted/80">+{more}</li>
+                )}
               </ul>
             ) : (
               <span className="text-sm text-brand-text-muted">—</span>
@@ -166,6 +190,7 @@ function groupByMonth(workouts: StoredWorkout[]): [string, StoredWorkout[]][] {
 export function History() {
   const { t } = useLanguage();
   const allExercises = useAllExercises();
+  const { templates } = useWorkoutTemplates();
   const { workouts, isLoading } = useCompletedWorkouts();
   const [atTop, setAtTop] = useState(true);
   const [atBottom, setAtBottom] = useState(true);
@@ -230,6 +255,14 @@ export function History() {
                           <WorkoutCard
                             workout={workout}
                             allExercises={allExercises}
+                            templateName={
+                              workout.templateName?.trim() ||
+                              (workout.templateId
+                                ? templates.find(
+                                    (tmpl) => tmpl.id === workout.templateId,
+                                  )?.name
+                                : undefined)
+                            }
                             t={t}
                           />
                         </li>

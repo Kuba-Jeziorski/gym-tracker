@@ -18,5 +18,9 @@ export type StoredWorkout = {
   id: string
   startedAt: string
   completedAt: string
+  /** Present when the workout was started from a template (Supabase `template_id`). */
+  templateId?: string | null
+  /** Snapshot at save time (`trainings.template_name`); survives template delete / id null. */
+  templateName?: string | null
   exercises: StoredWorkoutExercise[]
 }

@@ -6,6 +6,8 @@ export type TrainingRow = {
   id: string;
   user_id: string;
   template_id: string | null;
+  /** Added in migration 006; may be absent before migration runs. */
+  template_name?: string | null;
   started_at: string;
   completed_at: string;
   exercises: unknown;
@@ -19,6 +21,7 @@ export type TrainingInsert = Pick<
   | "id"
   | "user_id"
   | "template_id"
+  | "template_name"
   | "started_at"
   | "completed_at"
   | "exercises"
@@ -26,7 +29,16 @@ export type TrainingInsert = Pick<
 >;
 
 export type TrainingUpdate = Partial<
-  Pick<TrainingRow, "template_id" | "started_at" | "completed_at" | "exercises" | "notes" | "updated_at">
+  Pick<
+    TrainingRow,
+    | "template_id"
+    | "template_name"
+    | "started_at"
+    | "completed_at"
+    | "exercises"
+    | "notes"
+    | "updated_at"
+  >
 >;
 
 export function toStoredWorkout(row: TrainingRow): StoredWorkout {
@@ -34,6 +46,8 @@ export function toStoredWorkout(row: TrainingRow): StoredWorkout {
     id: row.id,
     startedAt: row.started_at,
     completedAt: row.completed_at,
+    templateId: row.template_id,
+    templateName: row.template_name,
     exercises: (Array.isArray(row.exercises) ? row.exercises : []) as StoredWorkout["exercises"],
   };
 }

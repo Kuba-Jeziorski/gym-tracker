@@ -43,7 +43,8 @@ export function CompletedWorkoutsProvider({ children }: { children: ReactNode })
       const { error } = await upsertTraining({
         id: workout.id,
         user_id: userId,
-        template_id: null,
+        template_id: workout.templateId ?? null,
+        template_name: workout.templateName?.trim() || null,
         started_at: workout.startedAt,
         completed_at: workout.completedAt,
         exercises: workout.exercises ?? [],
