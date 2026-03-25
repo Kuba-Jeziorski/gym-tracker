@@ -61,7 +61,6 @@ export const selectStyles = {
   }),
 };
 
-/** Styles for react-select `isMulti` — single-select uses fixed 42px height which breaks multi. */
 export const selectStylesMulti = {
   ...selectStyles,
   control: (base: Record<string, unknown>, state: { isFocused: boolean }) => ({

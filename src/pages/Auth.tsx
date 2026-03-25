@@ -7,7 +7,6 @@ import { useAuth } from "../contexts/AuthContext";
 import { lbToKg } from "../helpers/weightConversion";
 import { cn } from "../lib/utils";
 import { supabase } from "../services/supabaseClient";
-// import { routes } from "../routes";
 
 type AuthTab = "signin" | "signup" | "reset";
 
@@ -26,7 +25,6 @@ export function Auth() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  // Sign-up optional fields (only used when tab === "signup"); saved via Supabase trigger from user metadata
   const [signupLocale, setSignupLocale] = useState<Locale>("en");
   const [signupWeightUnit, setSignupWeightUnit] = useState<WeightUnit>("kg");
   const [signupName, setSignupName] = useState("");
@@ -230,41 +228,6 @@ export function Auth() {
                 />
               </div>
             )}
-
-            {/* TODO: To fix */}
-            {/* {tab === "signin" && (
-              <button
-                type="button"
-                onClick={async () => {
-                  setError(null);
-                  setSuccess(null);
-                  const trimmedEmail = email.trim();
-                  if (!trimmedEmail) {
-                    setError(t("auth_error_missingEmail"));
-                    return;
-                  }
-                  setSubmitting(true);
-                  try {
-                    const redirectTo =
-                      typeof window !== "undefined"
-                        ? `${window.location.origin}${routes.auth}`
-                        : undefined;
-                    const { error: err } =
-                      await supabase.auth.resetPasswordForEmail(trimmedEmail, {
-                        redirectTo,
-                      });
-                    if (err) setError(err.message);
-                    else setSuccess(t("auth_success_passwordEmailSent"));
-                  } finally {
-                    setSubmitting(false);
-                  }
-                }}
-                className="text-sm text-brand-accent hover:text-brand-primary-hover transition-colors text-left"
-                disabled={submitting}
-              >
-                {t("auth_forgotPassword")}
-              </button>
-            )} */}
 
             {tab === "signup" && (
               <div className="flex flex-col gap-4 pt-2 border-t border-brand-border">

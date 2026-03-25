@@ -1,6 +1,3 @@
--- Allow users to delete their own auth account from the client.
--- This must be created by an admin (SQL editor / migration runner).
-
 create or replace function public.delete_current_user()
 returns void
 language plpgsql

@@ -1,4 +1,3 @@
-/* Basic offline cache for same-origin GET requests (Vite build-friendly). */
 const CACHE_NAME = "gym-tracker-v1";
 
 self.addEventListener("install", (event) => {
@@ -23,7 +22,6 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 
-  // Network-first for navigations.
   if (req.mode === "navigate") {
     event.respondWith(
       (async () => {
@@ -41,7 +39,6 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Stale-while-revalidate for other same-origin GETs (assets).
   event.respondWith(
     (async () => {
       const cached = await caches.match(req);

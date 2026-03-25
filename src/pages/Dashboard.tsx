@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useCurrentWorkout } from "../contexts/CurrentWorkoutContext";
 import { useCompletedWorkouts } from "../contexts/CompletedWorkoutsContext";
+import { useWorkoutTemplates } from "../contexts/WorkoutTemplatesContext";
 import { useUserProfile } from "../contexts/UserProfileContext";
 import { useAllExercises } from "../contexts/CustomExercisesContext";
 import { useWeightUnit } from "../contexts/WeightUnitContext";
@@ -42,10 +43,12 @@ function getExerciseDisplayName(
 function RecentWorkoutCard({
   workout,
   allExercises,
+  templateName,
   t,
 }: {
   workout: StoredWorkout;
   allExercises: { unique_name: string; name: string }[];
+  templateName?: string;
   t: (key: string) => string;
 }) {
   const completedDate = new Date(workout.completedAt);
@@ -67,8 +70,12 @@ function RecentWorkoutCard({
       )}
     >
       <div className="grid grid-cols-3 min-h-[4.5rem] xs:grid-cols-1">
-        {/* Desktop: exercises left */}
-        <div className="col-span-2 p-3 flex flex-col justify-center xs:hidden">
+        <div className="col-span-2 p-3 flex flex-col justify-start xs:hidden">
+          {templateName ? (
+            <p className="text-brand-text-muted text-sm mb-1.5 shrink-0">
+              {t("workout_templateLabel")}: {templateName}
+            </p>
+          ) : null}
           {exerciseLabels.length > 0 ? (
             <ul className="text-xs text-brand-text-muted flex flex-wrap gap-2">
               {exerciseLabels.map((label, i) => (
@@ -84,7 +91,6 @@ function RecentWorkoutCard({
           )}
         </div>
 
-        {/* Desktop: date/time right */}
         <div className="col-span-1 border-l border-brand-border flex flex-col items-end justify-center gap-0.5 pr-3 my-3 xs:hidden">
           <p className="text-base font-medium text-brand-dark">
             {formatDMY(completedDate)}
@@ -97,7 +103,6 @@ function RecentWorkoutCard({
           </p>
         </div>
 
-        {/* Mobile (<480px): date/time top, exercises bottom */}
         <div className="hidden xs:block">
           <div className="px-4 py-3 flex items-center justify-between gap-3">
             <div className="min-w-0">
@@ -114,6 +119,11 @@ function RecentWorkoutCard({
           </div>
           <div className="h-px bg-brand-border mx-4" />
           <div className="px-4 py-3">
+            {templateName ? (
+              <p className="text-brand-text-muted text-sm mb-1.5">
+                {t("workout_templateLabel")}: {templateName}
+              </p>
+            ) : null}
             {exerciseLabels.length > 0 ? (
               <ul className="text-xs text-brand-text-muted flex flex-wrap gap-2">
                 {exerciseLabels.map((label, i) => (
@@ -140,6 +150,7 @@ export function Dashboard() {
   const { workouts, isLoading } = useCompletedWorkouts();
   const { profile } = useUserProfile();
   const allExercises = useAllExercises();
+  const { templates } = useWorkoutTemplates();
   const { weightUnit } = useWeightUnit();
 
   const recentWorkouts = [...workouts]
@@ -221,6 +232,13 @@ export function Dashboard() {
                 <RecentWorkoutCard
                   workout={workout}
                   allExercises={allExercises}
+                  templateName={
+                    workout.templateName?.trim() ||
+                    (workout.templateId
+                      ? templates.find((tmpl) => tmpl.id === workout.templateId)
+                          ?.name
+                      : undefined)
+                  }
                   t={t}
                 />
               </li>

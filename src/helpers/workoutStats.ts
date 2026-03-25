@@ -1,6 +1,5 @@
 import type { StoredWorkout } from '../data/workoutStorage'
 
-/** Parse time string to seconds (e.g. "90" -> 90, "1:30" -> 90). */
 function parseTimeToSeconds(s: string): number | null {
   const trimmed = s?.trim()
   if (!trimmed) return null

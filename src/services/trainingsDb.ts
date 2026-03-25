@@ -6,7 +6,6 @@ export type TrainingRow = {
   id: string;
   user_id: string;
   template_id: string | null;
-  /** Added in migration 006; may be absent before migration runs. */
   template_name?: string | null;
   started_at: string;
   completed_at: string;

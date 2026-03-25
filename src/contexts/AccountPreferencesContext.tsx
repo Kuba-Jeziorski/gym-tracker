@@ -44,11 +44,8 @@ type AccountPreferencesValue = {
   setGender: (gender: UserGender | null) => void;
   t: (key: string) => string;
   profileLoading: boolean;
-  /** Persist immediately (cancels debounce) and refetch from DB. */
   flushProfileSave: () => Promise<void>;
-  /** Flush pending save, then fetch DB; if server differs from UI, apply server (stale sync). */
   refreshProfileFromServer: () => Promise<void>;
-  /** Explicit save to Supabase (POST upsert); returns error message on failure. */
   saveProfileChanges: () => Promise<{ ok: boolean; error: string | null }>;
 };
 

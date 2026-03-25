@@ -1,9 +1,7 @@
-/** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
-      /** min-width: auto — not in default Tailwind; use with xs: below 480px */
       minWidth: {
         auto: 'auto',
       },
@@ -25,7 +23,6 @@ export default {
     },
   },
   plugins: [
-    /** xs: applies when viewport width is below 480px */
     function xsMaxWidthPlugin({ addVariant }) {
       addVariant('xs', '@media (max-width: 480px) { & }')
     },

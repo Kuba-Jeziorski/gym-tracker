@@ -1,5 +1,3 @@
--- Run in Supabase SQL Editor (or via CLI). Creates user profiles synced with auth.
-
 create table if not exists public.profiles (
   id uuid primary key references auth.users (id) on delete cascade,
   name text not null default '',
@@ -25,7 +23,6 @@ create policy "profiles_update_own"
   on public.profiles for update
   using (auth.uid() = id);
 
--- New auth users: row from signup metadata (Auth signUp options.data)
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql

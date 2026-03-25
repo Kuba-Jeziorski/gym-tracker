@@ -15,7 +15,6 @@ const queryClient = new QueryClient()
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').catch(() => {
-      // best-effort; app should still work without SW
     })
   })
 }

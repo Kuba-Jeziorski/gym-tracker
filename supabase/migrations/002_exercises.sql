@@ -1,5 +1,3 @@
--- Custom exercises only (built-in exercises live in the app code).
-
 create table if not exists public.exercises (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,

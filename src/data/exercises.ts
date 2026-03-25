@@ -1,8 +1,3 @@
-/**
- * Exercise list for workouts.
- * - unique_name: stable key for i18n and API (e.g. "dumbbell_chest_press"). Do not change.
- * - name: default English label; use for display or as fallback when translating (e.g. t(`exercises.${e.unique_name}`) ?? e.name).
- */
 export type Exercise = {
   unique_name: string;
   name: string;
@@ -11,6 +6,9 @@ export type Exercise = {
   weight: boolean;
   reps: boolean;
   time: boolean;
+  distance?: boolean;
+  avgVelocity?: boolean;
+  pace?: boolean;
 };
 
 export const exercises: Exercise[] = [
@@ -283,6 +281,9 @@ export const exercises: Exercise[] = [
     weight: false,
     reps: false,
     time: true,
+    distance: true,
+    avgVelocity: true,
+    pace: true,
   },
   {
     unique_name: "rowing_machine",

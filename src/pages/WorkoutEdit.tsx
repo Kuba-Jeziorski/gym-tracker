@@ -10,15 +10,30 @@ import {
   storedKgToDisplay,
   inputWeightToKg,
 } from "../helpers/weightConversion";
+import {
+  parseAvgVelocityKmh,
+  parseDistanceKm,
+  parseDurationToSeconds,
+  parsePaceToMinPerKm,
+} from "../helpers/kinematics";
 import { routes } from "../routes";
 import { Select } from "../components/Select";
 import { ConfirmModal } from "../components/ConfirmModal";
 import { cn } from "../lib/utils";
+import {
+  preventViewportZoomOnInputFocus,
+  restoreViewportAfterInputBlur,
+} from "../helpers/restoreViewportAfterInputBlur";
+
+import type { UseFormRegisterReturn } from "react-hook-form";
 
 type SetValues = {
   weight?: string;
   reps?: string;
   time?: string;
+  distance?: string;
+  avgVelocity?: string;
+  pace?: string;
 };
 
 type WorkoutExercise = {
@@ -39,8 +54,6 @@ function toDatetimeLocalValue(iso: string): string {
 }
 
 function datetimeLocalToIso(value: string): string | null {
-  // `datetime-local` gives a string like: `YYYY-MM-DDTHH:mm` (no timezone).
-  // We must parse it explicitly to avoid browser/date parsing differences.
   if (!value) return null;
   const [datePart, timePart] = value.split("T");
   if (!datePart || !timePart) return null;
@@ -54,7 +67,6 @@ function datetimeLocalToIso(value: string): string | null {
   return dt.toISOString();
 }
 
-/** DB requires completed_at after started_at; shift start when user sets completion in the past. */
 function startedAtForCompletedAt(
   previousStartedAt: string,
   completedAtIso: string,
@@ -68,13 +80,23 @@ function startedAtForCompletedAt(
   return new Date(Math.max(0, completed - oneHourMs)).toISOString();
 }
 
-const defaultSet = (): SetValues => ({ weight: "", reps: "", time: "" });
+const defaultSet = (): SetValues => ({
+  weight: "",
+  reps: "",
+  time: "",
+  distance: "",
+  avgVelocity: "",
+  pace: "",
+});
 
 function isEmptySet(s: SetValues): boolean {
   return (
     !(s.weight?.trim() ?? "") &&
     !(s.reps?.trim() ?? "") &&
-    !(s.time?.trim() ?? "")
+    !(s.time?.trim() ?? "") &&
+    !(s.distance?.trim() ?? "") &&
+    !(s.avgVelocity?.trim() ?? "") &&
+    !(s.pace?.trim() ?? "")
   );
 }
 
@@ -83,6 +105,9 @@ function canAddSet(
     weight?: boolean;
     reps?: boolean;
     time?: boolean;
+    distance?: boolean;
+    avgVelocity?: boolean;
+    pace?: boolean;
     unique_name: string;
   }[],
   sets: SetValues[],
@@ -94,6 +119,29 @@ function canAddSet(
   const last = sets[sets.length - 1];
   if (exercise.weight && !last.weight?.trim()) return false;
   if (exercise.reps && !last.reps?.trim()) return false;
+  const isKinematics =
+    Boolean(exercise.distance) ||
+    Boolean(exercise.avgVelocity) ||
+    Boolean(exercise.pace);
+
+  if (isKinematics) {
+    const durationSec = exercise.time
+      ? parseDurationToSeconds(last.time ?? "")
+      : null;
+    const distanceKm = exercise.distance ? parseDistanceKm(last.distance ?? "") : null;
+    const avgVelocityKmh = exercise.avgVelocity
+      ? parseAvgVelocityKmh(last.avgVelocity ?? "")
+      : null;
+    const paceMinPerKm = exercise.pace ? parsePaceToMinPerKm(last.pace ?? "") : null;
+
+    if (durationSec != null && avgVelocityKmh != null) return true;
+    if (durationSec != null && paceMinPerKm != null) return true;
+    if (distanceKm != null && avgVelocityKmh != null) return true;
+    if (distanceKm != null && paceMinPerKm != null) return true;
+    if (durationSec != null && distanceKm != null) return true;
+    return false;
+  }
+
   if (exercise.time && !last.time?.trim()) return false;
   return true;
 }
@@ -117,6 +165,22 @@ export function WorkoutEdit() {
       defaultValues: { completedAt: "", exercises: [] },
     });
 
+  function mergeRegisterWithViewportClamping(field: UseFormRegisterReturn) {
+    return {
+      ...field,
+      onFocus: () => {
+        preventViewportZoomOnInputFocus();
+      },
+      onBlur: (e) => {
+        const r = (
+          field as unknown as { onBlur?: (ev: unknown) => unknown }
+        ).onBlur?.(e);
+        restoreViewportAfterInputBlur();
+        return r;
+      },
+    } as UseFormRegisterReturn;
+  }
+
   const {
     fields: exerciseFields,
     append: appendExercise,
@@ -127,6 +191,9 @@ export function WorkoutEdit() {
   });
 
   const watchedExercises = watch("exercises");
+  const hasEmptySetsInForm = (watchedExercises ?? []).some((ex) =>
+    (ex.sets ?? []).some(isEmptySet),
+  );
 
   useEffect(() => {
     if (!workout) return;
@@ -138,6 +205,9 @@ export function WorkoutEdit() {
               weight: storedKgToDisplay(s.weight ?? "", weightUnit),
               reps: s.reps ?? "",
               time: s.time ?? "",
+              distance: s.distance ?? "",
+              avgVelocity: s.avgVelocity ?? "",
+              pace: s.pace ?? "",
             }))
           : [defaultSet()],
     }));
@@ -157,6 +227,7 @@ export function WorkoutEdit() {
 
   const onSave = handleSubmit(async (data) => {
     if (!id || !workout) return;
+    if (hasEmptySetsInForm) return;
     const completedAt = datetimeLocalToIso(data.completedAt);
     if (!completedAt) return;
     const startedAt = startedAtForCompletedAt(workout.startedAt, completedAt);
@@ -169,6 +240,9 @@ export function WorkoutEdit() {
           weight: inputWeightToKg(s.weight ?? "", weightUnit),
           reps: s.reps ?? "",
           time: s.time ?? "",
+          distance: s.distance ?? "",
+          avgVelocity: s.avgVelocity ?? "",
+          pace: s.pace ?? "",
         }));
         return {
           exerciseUniqueName: ex.exerciseUniqueName,
@@ -239,7 +313,9 @@ export function WorkoutEdit() {
               id="workout-edit-completed-at"
               type="datetime-local"
               step={60}
-              {...register("completedAt", { required: true })}
+              {...mergeRegisterWithViewportClamping(
+                register("completedAt", { required: true }),
+              )}
               className="max-w-full rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text"
             />
             <p className="text-brand-text-muted text-xs mt-1.5">
@@ -301,6 +377,12 @@ export function WorkoutEdit() {
                         prevSet?.reps?.trim() || t("workout_reps");
                       const timePlaceholder =
                         prevSet?.time?.trim() || t("workout_time");
+                      const distancePlaceholder =
+                        prevSet?.distance?.trim() || t("workout_distance");
+                      const avgVelocityPlaceholder =
+                        prevSet?.avgVelocity?.trim() || t("workout_avgVelocity");
+                      const pacePlaceholder =
+                        prevSet?.pace?.trim() || t("workout_pace");
                       return (
                         <div key={setIndex} className="text-sm space-y-1.5">
                           <div className="flex justify-end">
@@ -321,11 +403,17 @@ export function WorkoutEdit() {
                             {exercise.weight && (
                               <div className="flex items-center gap-1.5 mr-5">
                                 <input
-                                  type="number"
+                                  type="text"
                                   placeholder={weightPlaceholder}
-                                  {...register(
-                                    `exercises.${index}.sets.${setIndex}.weight` as const,
+                                  {...mergeRegisterWithViewportClamping(
+                                    register(
+                                      `exercises.${index}.sets.${setIndex}.weight` as const,
+                                    ),
                                   )}
+                                  inputMode="decimal"
+                                  autoComplete="off"
+                                  spellCheck={false}
+                                  pattern="[0-9]*[.,]?[0-9]*"
                                   className="min-w-[8rem] w-28 rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder"
                                 />
                                 <span className="text-brand-text-muted text-sm shrink-0">
@@ -338,11 +426,17 @@ export function WorkoutEdit() {
                             {exercise.reps && (
                               <>
                                 <input
-                                  type="number"
+                                  type="text"
                                   placeholder={repsPlaceholder}
-                                  {...register(
-                                    `exercises.${index}.sets.${setIndex}.reps` as const,
+                                  {...mergeRegisterWithViewportClamping(
+                                    register(
+                                      `exercises.${index}.sets.${setIndex}.reps` as const,
+                                    ),
                                   )}
+                                  inputMode="numeric"
+                                  autoComplete="off"
+                                  spellCheck={false}
+                                  pattern="[0-9]*[.,]?[0-9]*"
                                   className="min-w-[8rem] w-24 rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder"
                                 />
                                 <span className="text-brand-text-muted text-sm shrink-0">
@@ -353,15 +447,84 @@ export function WorkoutEdit() {
                             {exercise.time && (
                               <div className="flex items-center gap-1.5">
                                 <input
-                                  type="number"
+                                  type="text"
                                   placeholder={timePlaceholder}
-                                  {...register(
-                                    `exercises.${index}.sets.${setIndex}.time` as const,
+                                  {...mergeRegisterWithViewportClamping(
+                                    register(
+                                      `exercises.${index}.sets.${setIndex}.time` as const,
+                                    ),
                                   )}
+                                  inputMode="text"
+                                  autoComplete="off"
+                                  spellCheck={false}
+                                  pattern="[0-9:.,]*"
                                   className="min-w-[8rem] w-28 rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder"
                                 />
                                 <span className="text-brand-text-muted text-sm shrink-0">
                                   {t("unit_s")}
+                                </span>
+                              </div>
+                            )}
+                            {exercise.distance && (
+                              <div className="flex items-center gap-1.5">
+                                <input
+                                  type="text"
+                                  placeholder={distancePlaceholder}
+                                  {...mergeRegisterWithViewportClamping(
+                                    register(
+                                      `exercises.${index}.sets.${setIndex}.distance` as const,
+                                    ),
+                                  )}
+                                  inputMode="decimal"
+                                  autoComplete="off"
+                                  spellCheck={false}
+                                  pattern="[0-9]*[.,]?[0-9]*"
+                                  className="min-w-[8rem] w-28 rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder"
+                                />
+                                <span className="text-brand-text-muted text-sm shrink-0">
+                                  {t("unit_km")}
+                                </span>
+                              </div>
+                            )}
+                            {exercise.avgVelocity && (
+                              <div className="flex items-center gap-1.5">
+                                <input
+                                  type="text"
+                                  placeholder={avgVelocityPlaceholder}
+                                  {...mergeRegisterWithViewportClamping(
+                                    register(
+                                      `exercises.${index}.sets.${setIndex}.avgVelocity` as const,
+                                    ),
+                                  )}
+                                  inputMode="decimal"
+                                  autoComplete="off"
+                                  spellCheck={false}
+                                  pattern="[0-9]*[.,]?[0-9]*"
+                                  className="min-w-[8rem] w-28 rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder"
+                                />
+                                <span className="text-brand-text-muted text-sm shrink-0">
+                                  {t("unit_kmh")}
+                                </span>
+                              </div>
+                            )}
+                            {exercise.pace && (
+                              <div className="flex items-center gap-1.5">
+                                <input
+                                  type="text"
+                                  placeholder={pacePlaceholder}
+                                  {...mergeRegisterWithViewportClamping(
+                                    register(
+                                      `exercises.${index}.sets.${setIndex}.pace` as const,
+                                    ),
+                                  )}
+                                  inputMode="text"
+                                  autoComplete="off"
+                                  spellCheck={false}
+                                  pattern="[0-9:.,]*"
+                                  className="min-w-[8rem] w-28 rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder"
+                                />
+                                <span className="text-brand-text-muted text-sm shrink-0">
+                                  {t("unit_min_per_km")}
                                 </span>
                               </div>
                             )}
@@ -424,11 +587,23 @@ export function WorkoutEdit() {
         </form>
       </div>
 
+      {hasEmptySetsInForm && (
+        <p className="text-sm text-red-400 mt-2">
+          {t("workout_noEmptySetsMessage")}
+        </p>
+      )}
+
       <footer className="flex gap-3 mt-4 pt-4 border-t border-brand-border">
         <button
           type="submit"
           form="workout-edit-form"
-          className="px-4 py-2 rounded-lg bg-brand-primary text-brand-bg font-medium hover:bg-brand-primary-hover transition-colors duration-300"
+          disabled={hasEmptySetsInForm}
+          className={cn(
+            "px-4 py-2 rounded-lg font-medium hover:bg-brand-primary-hover transition-colors duration-300",
+            hasEmptySetsInForm
+              ? "bg-brand-code-bg text-brand-text-muted cursor-not-allowed"
+              : "bg-brand-primary text-brand-bg",
+          )}
         >
           {t("workoutEdit_save")}
         </button>

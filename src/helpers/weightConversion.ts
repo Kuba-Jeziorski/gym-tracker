@@ -1,4 +1,3 @@
-/** Factor for kg → lb (1 kg = 2.2 lb). We store weights in kg and convert for display/input. */
 export const KG_TO_LB = 2.2;
 
 export function kgToLb(kg: number): number {
@@ -9,7 +8,6 @@ export function lbToKg(lb: number): number {
   return lb / KG_TO_LB;
 }
 
-/** Stored value is in kg. Returns string for display in the given unit. */
 export function formatStoredWeightForDisplay(kgValue: string, unit: "kg" | "lb"): string {
   const trimmed = kgValue?.trim();
   if (!trimmed) return "—";
@@ -22,12 +20,12 @@ export function formatStoredWeightForDisplay(kgValue: string, unit: "kg" | "lb")
   return trimmed;
 }
 
-/** User input in display unit → string kg for storage. */
 export function inputWeightToKg(value: string, unit: "kg" | "lb"): string {
   const trimmed = value?.trim();
   if (!trimmed) return "";
-  const num = parseFloat(trimmed);
-  if (Number.isNaN(num)) return trimmed;
+  const normalized = trimmed.replace(",", ".");
+  const num = parseFloat(normalized);
+  if (Number.isNaN(num)) return "";
   if (unit === "lb") {
     const kg = lbToKg(num);
     return kg % 1 === 0 ? kg.toString() : kg.toFixed(2);
@@ -35,7 +33,6 @@ export function inputWeightToKg(value: string, unit: "kg" | "lb"): string {
   return trimmed;
 }
 
-/** Stored kg → string for form display in the given unit. */
 export function storedKgToDisplay(kgValue: string, unit: "kg" | "lb"): string {
   const trimmed = kgValue?.trim();
   if (!trimmed) return "";

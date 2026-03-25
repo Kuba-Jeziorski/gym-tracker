@@ -4,6 +4,7 @@ import { Layout } from './components/Layout'
 import { PageLoader } from './components/PageLoader'
 import { routes } from './routes'
 import { useAuth } from './contexts/AuthContext'
+import { AppErrorBoundary } from './components/AppErrorBoundary'
 
 const Auth = lazy(() => import('./pages/Auth').then((m) => ({ default: m.Auth })))
 const Dashboard = lazy(() => import('./pages/Dashboard').then((m) => ({ default: m.Dashboard })))
@@ -36,25 +37,30 @@ function PublicAuthRoute() {
 function App() {
   return (
     <BrowserRouter>
-      <Suspense fallback={<PageLoader />}>
-        <Routes>
-          <Route path={routes.auth} element={<PublicAuthRoute />} />
-          <Route element={<ProtectedWrapper />}>
-            <Route path={routes.dashboard} element={<Layout />}>
-              <Route index element={<Dashboard />} />
-              <Route path="workout" element={<MyWorkout />} />
-              <Route path="history/:id" element={<WorkoutDetail />} />
-              <Route path="history/:id/edit" element={<WorkoutEdit />} />
-              <Route path="exercises/history/:exerciseKey" element={<ExerciseHistory />} />
-              <Route path="exercises" element={<Library />} />
-              <Route path="install" element={<Install />} />
-              <Route path="user" element={<User />} />
-              <Route path="settings" element={<Settings />} />
-              <Route path="*" element={<NotFound />} />
+      <AppErrorBoundary>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route path={routes.auth} element={<PublicAuthRoute />} />
+            <Route element={<ProtectedWrapper />}>
+              <Route path={routes.dashboard} element={<Layout />}>
+                <Route index element={<Dashboard />} />
+                <Route path="workout" element={<MyWorkout />} />
+                <Route path="history/:id" element={<WorkoutDetail />} />
+                <Route path="history/:id/edit" element={<WorkoutEdit />} />
+                <Route
+                  path="exercises/history/:exerciseKey"
+                  element={<ExerciseHistory />}
+                />
+                <Route path="exercises" element={<Library />} />
+                <Route path="install" element={<Install />} />
+                <Route path="user" element={<User />} />
+                <Route path="settings" element={<Settings />} />
+                <Route path="*" element={<NotFound />} />
+              </Route>
             </Route>
-          </Route>
-        </Routes>
-      </Suspense>
+          </Routes>
+        </Suspense>
+      </AppErrorBoundary>
     </BrowserRouter>
   )
 }

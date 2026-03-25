@@ -4,18 +4,29 @@ import { useLanguage } from "../contexts/LanguageContext";
 import { useWeightUnit } from "../contexts/WeightUnitContext";
 import { useCompletedWorkouts } from "../contexts/CompletedWorkoutsContext";
 import { useAllExercises } from "../contexts/CustomExercisesContext";
+import { useWorkoutTemplates } from "../contexts/WorkoutTemplatesContext";
 import { routes } from "../routes";
 import type { StoredWorkoutExercise, StoredSet } from "../data/workoutStorage";
+import type { Exercise } from "../data/exercises";
 import { ConfirmModal } from "../components/ConfirmModal";
 import { formatStoredWeightForDisplay } from "../helpers/weightConversion";
+import {
+  deriveKinematicsFromSet,
+  formatKm,
+  formatKmh,
+  formatPaceMinPerKm,
+  formatSecondsAsMmSs,
+} from "../helpers/kinematics";
 
 function ExerciseBlock({
   exercise,
+  exerciseConfig,
   displayName,
   t,
   weightUnit,
 }: {
   exercise: StoredWorkoutExercise;
+  exerciseConfig?: Exercise;
   displayName: string;
   t: (key: string) => string;
   weightUnit: "kg" | "lb";
@@ -24,6 +35,21 @@ function ExerciseBlock({
   const hasWeight = sets.some((s) => s.weight != null && s.weight !== "");
   const hasReps = sets.some((s) => s.reps != null && s.reps !== "");
   const hasTime = sets.some((s) => s.time != null && s.time !== "");
+  const hasDistance = sets.some(
+    (s) => s.distance != null && s.distance !== "",
+  );
+  const hasAvgVelocity = sets.some(
+    (s) => s.avgVelocity != null && s.avgVelocity !== "",
+  );
+  const hasPace = sets.some((s) => s.pace != null && s.pace !== "");
+
+  const showWeight = Boolean(exerciseConfig?.weight) || hasWeight;
+  const showReps = Boolean(exerciseConfig?.reps) || hasReps;
+  const showTime = Boolean(exerciseConfig?.time) || hasTime;
+  const showDistance = Boolean(exerciseConfig?.distance) || hasDistance;
+  const showAvgVelocity =
+    Boolean(exerciseConfig?.avgVelocity) || hasAvgVelocity;
+  const showPace = Boolean(exerciseConfig?.pace) || hasPace;
 
   return (
     <div className="rounded-lg border border-brand-border bg-brand-bg p-4">
@@ -35,17 +61,32 @@ function ExerciseBlock({
           <thead>
             <tr className="border-b border-brand-border text-brand-text-muted">
               <th className="py-2 pr-4 font-medium">#</th>
-              {hasWeight && (
+              {showWeight && (
                 <th className="py-2 pr-4 font-medium">
                   {t("workout_weight")} (
                   {t(weightUnit === "kg" ? "unit_kg" : "unit_lb")})
                 </th>
               )}
-              {hasReps && (
+              {showReps && (
                 <th className="py-2 pr-4 font-medium">{t("workout_reps")}</th>
               )}
-              {hasTime && (
+              {showTime && (
                 <th className="py-2 font-medium">{t("workout_time")}</th>
+              )}
+              {showDistance && (
+                <th className="py-2 font-medium whitespace-nowrap">
+                  {t("workout_distance")} ({t("unit_km")})
+                </th>
+              )}
+              {showAvgVelocity && (
+                <th className="py-2 font-medium whitespace-nowrap">
+                  {t("workout_avgVelocity")} ({t("unit_kmh")})
+                </th>
+              )}
+              {showPace && (
+                <th className="py-2 font-medium whitespace-nowrap">
+                  {t("workout_pace")} ({t("unit_min_per_km")})
+                </th>
               )}
             </tr>
           </thead>
@@ -56,18 +97,55 @@ function ExerciseBlock({
                 className="border-b border-[var(--brand-code-bg)] last:border-b-0"
               >
                 <td className="py-2 pr-4 text-brand-text">{setIndex + 1}</td>
-                {hasWeight && (
+                {showWeight && (
                   <td className="py-2 pr-4 text-brand-text">
                     {formatStoredWeightForDisplay(set.weight ?? "", weightUnit)}
                   </td>
                 )}
-                {hasReps && (
+                {showReps && (
                   <td className="py-2 pr-4 text-brand-text">
                     {set.reps ?? "—"}
                   </td>
                 )}
-                {hasTime && (
-                  <td className="py-2 text-brand-text">{set.time ?? "—"}</td>
+                {showTime && (
+                  <td className="py-2 text-brand-text">
+                    {(() => {
+                      const derived = deriveKinematicsFromSet(set);
+                      if (derived.durationSec != null) {
+                        return formatSecondsAsMmSs(derived.durationSec);
+                      }
+                      return set.time ?? "—";
+                    })()}
+                  </td>
+                )}
+                {showDistance && (
+                  <td className="py-2 text-brand-text">
+                    {(() => {
+                      const derived = deriveKinematicsFromSet(set);
+                      if (derived.distanceKm != null) return formatKm(derived.distanceKm);
+                      return set.distance ?? "—";
+                    })()}
+                  </td>
+                )}
+                {showAvgVelocity && (
+                  <td className="py-2 text-brand-text">
+                    {(() => {
+                      const derived = deriveKinematicsFromSet(set);
+                      if (derived.avgVelocityKmh != null)
+                        return formatKmh(derived.avgVelocityKmh);
+                      return set.avgVelocity ?? "—";
+                    })()}
+                  </td>
+                )}
+                {showPace && (
+                  <td className="py-2 text-brand-text">
+                    {(() => {
+                      const derived = deriveKinematicsFromSet(set);
+                      if (derived.paceMinPerKm != null)
+                        return formatPaceMinPerKm(derived.paceMinPerKm);
+                      return set.pace ?? "—";
+                    })()}
+                  </td>
                 )}
               </tr>
             ))}
@@ -85,6 +163,7 @@ export function WorkoutDetail() {
   const { weightUnit } = useWeightUnit();
   const { workouts, removeWorkout } = useCompletedWorkouts();
   const allExercises = useAllExercises();
+  const { templates } = useWorkoutTemplates();
   const [removeModalOpen, setRemoveModalOpen] = useState(false);
 
   const getExerciseDisplayName = (uniqueName: string) => {
@@ -157,6 +236,11 @@ export function WorkoutDetail() {
 
   const startedLine = `${t("workoutDetail_started")} - ${formatDMY(startedDate)}, ${formatHMS(startedDate)}`;
   const completedLine = `${t("workoutDetail_completed")} - ${formatDMY(completedDate)}, ${formatHMS(completedDate)}`;
+  const templateName =
+    workout.templateName?.trim() ||
+    (workout.templateId
+      ? templates.find((tmpl) => tmpl.id === workout.templateId)?.name
+      : "");
 
   return (
     <div>
@@ -172,6 +256,11 @@ export function WorkoutDetail() {
           <h1 className="text-2xl font-semibold text-brand-dark mb-1">
             {t("workoutDetail_title")} — {formatDMY(completedDate)}
           </h1>
+          {templateName ? (
+            <p className="text-brand-text-muted text-sm">
+              {t("workout_templateLabel")}: {templateName}
+            </p>
+          ) : null}
           <p className="text-brand-text-muted text-sm">{startedLine}</p>
           <p className="text-brand-text-muted text-sm">{completedLine}</p>
         </div>
@@ -208,6 +297,9 @@ export function WorkoutDetail() {
             <ExerciseBlock
               key={`${exercise.exerciseUniqueName}-${index}`}
               exercise={exercise}
+              exerciseConfig={allExercises.find(
+                (e) => e.unique_name === exercise.exerciseUniqueName,
+              )}
               displayName={getExerciseDisplayName(exercise.exerciseUniqueName)}
               t={t}
               weightUnit={weightUnit}

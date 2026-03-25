@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useCompletedWorkouts } from "../contexts/CompletedWorkoutsContext";
 import { useWorkoutTemplates } from "../contexts/WorkoutTemplatesContext";
@@ -34,7 +34,6 @@ function WorkoutCard({
 }: {
   workout: StoredWorkout;
   allExercises: { unique_name: string; name: string }[];
-  /** Resolved from current templates when this workout was saved with a template. */
   templateName?: string;
   t: (key: string) => string;
 }) {
@@ -57,7 +56,6 @@ function WorkoutCard({
       )}
     >
       <div className="grid grid-cols-3 min-h-[4.5rem] xs:grid-cols-1">
-        {/* Desktop: exercises left */}
         <div className="col-span-2 p-4 flex flex-col justify-end xs:hidden">
           {templateName ? (
             <p className="text-sm leading-snug text-brand-text mb-2 shrink-0">
@@ -84,7 +82,6 @@ function WorkoutCard({
           )}
         </div>
 
-        {/* Desktop: date/time right */}
         <div className="col-span-1 border-l border-brand-border flex flex-col items-end justify-center gap-0.5 pr-4 my-4 xs:hidden">
           <p className="text-base font-medium text-brand-dark">
             {formatDMY(completedDate)}
@@ -97,7 +94,6 @@ function WorkoutCard({
           </p>
         </div>
 
-        {/* Mobile (<480px): date/time top, exercises bottom */}
         <div className="hidden xs:block">
           <div className="px-4 py-3 flex items-center justify-between gap-3">
             <div className="min-w-0">
@@ -159,14 +155,12 @@ const MONTH_KEYS = [
   "month_december",
 ] as const;
 
-/** Format date as "March 2026" using translated month name (capitalized). */
 function formatMonthYear(d: Date, t: (key: string) => string): string {
   const monthName = t(MONTH_KEYS[d.getMonth()]);
   const capitalized = monthName.charAt(0).toUpperCase() + monthName.slice(1);
   return `${capitalized} ${d.getFullYear()}`;
 }
 
-/** Group workouts by month (key: "YYYY-MM"), newest first. */
 function groupByMonth(workouts: StoredWorkout[]): [string, StoredWorkout[]][] {
   const map = new Map<string, StoredWorkout[]>();
   for (const w of workouts) {
@@ -189,6 +183,12 @@ function groupByMonth(workouts: StoredWorkout[]): [string, StoredWorkout[]][] {
 
 export function History() {
   const { t } = useLanguage();
+  const location = useLocation();
+  const state = (location.state as
+    | { templateId?: string; templateName?: string }
+    | null) ?? null;
+  const filterTemplateId = state?.templateId ?? null;
+  const filterTemplateName = state?.templateName ?? null;
   const allExercises = useAllExercises();
   const { templates } = useWorkoutTemplates();
   const { workouts, isLoading } = useCompletedWorkouts();
@@ -208,7 +208,28 @@ export function History() {
     (a, b) =>
       new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime(),
   );
-  const byMonth = groupByMonth(sorted);
+  const resolvedTemplateName =
+    filterTemplateName ??
+    (filterTemplateId
+      ? templates.find((tmpl) => tmpl.id === filterTemplateId)?.name
+      : null);
+
+  const filtered = useMemo(() => {
+    if (!filterTemplateId && !filterTemplateName) return sorted;
+    if (filterTemplateId) {
+      return sorted.filter(
+        (w) =>
+          w.templateId === filterTemplateId ||
+          (resolvedTemplateName &&
+            w.templateName?.trim() === resolvedTemplateName),
+      );
+    }
+    return sorted.filter(
+      (w) => w.templateName?.trim() === (filterTemplateName ?? resolvedTemplateName),
+    );
+  }, [filterTemplateId, filterTemplateName, resolvedTemplateName, sorted]);
+
+  const byMonth = groupByMonth(filtered);
 
   useEffect(() => {
     checkScroll();
@@ -221,10 +242,15 @@ export function History() {
           {t("history_title")}
         </h1>
         <p className="text-brand-text-muted">{t("history_description")}</p>
+        {resolvedTemplateName ? (
+          <p className="text-brand-text-muted text-sm mt-2">
+            {t("workout_templateLabel")}: {resolvedTemplateName}
+          </p>
+        ) : null}
       </div>
       {isLoading ? (
         <p className="text-brand-text-muted text-sm shrink-0">{t("loading")}</p>
-      ) : sorted.length === 0 ? (
+      ) : filtered.length === 0 ? (
         <p className="text-brand-text-muted text-sm shrink-0">
           {t("history_empty")}
         </p>

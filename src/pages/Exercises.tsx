@@ -45,6 +45,9 @@ export function Exercises() {
   const [weight, setWeight] = useState(false);
   const [reps, setReps] = useState(false);
   const [time, setTime] = useState(false);
+  const [distance, setDistance] = useState(false);
+  const [avgVelocity, setAvgVelocity] = useState(false);
+  const [pace, setPace] = useState(false);
   const [mainMuscleGroup, setMainMuscleGroup] = useState("");
   const [allMuscleGroups, setAllMuscleGroups] = useState<string[]>([]);
   const [editTarget, setEditTarget] = useState<Exercise | null>(null);
@@ -87,6 +90,9 @@ export function Exercises() {
     setWeight(false);
     setReps(false);
     setTime(false);
+    setDistance(false);
+    setAvgVelocity(false);
+    setPace(false);
     setMainMuscleGroup("");
     setAllMuscleGroups([]);
     setEditTarget(null);
@@ -99,6 +105,9 @@ export function Exercises() {
     setWeight(ex.weight);
     setReps(ex.reps);
     setTime(ex.time);
+    setDistance(Boolean(ex.distance));
+    setAvgVelocity(Boolean(ex.avgVelocity));
+    setPace(Boolean(ex.pace));
     setMainMuscleGroup(ex.main_muscle_group ?? "");
     setAllMuscleGroups(ex.all_muscle_groups ?? []);
     requestAnimationFrame(() =>
@@ -110,13 +119,16 @@ export function Exercises() {
     e.preventDefault();
     const trimmed = name.trim();
     if (!trimmed) return;
-    if (!weight && !reps && !time) return;
+    if (!weight && !reps && !time && !distance && !avgVelocity && !pace) return;
     if (editTarget) {
       updateCustomExercise(editTarget.unique_name, {
         name: trimmed,
         weight,
         reps,
         time,
+        distance,
+        avgVelocity,
+        pace,
         main_muscle_group: mainMuscleGroup.trim() || "",
         all_muscle_groups: [...allMuscleGroups],
       });
@@ -127,6 +139,9 @@ export function Exercises() {
         weight,
         reps,
         time,
+        distance,
+        avgVelocity,
+        pace,
         main_muscle_group: mainMuscleGroup.trim() || "",
         all_muscle_groups: [...allMuscleGroups],
       });
@@ -143,7 +158,7 @@ export function Exercises() {
         <p className="text-brand-text-muted">{t("exercises_description")}</p>
       </header>
 
-      <div className="max-[640px]:block hidden shrink-0">
+      <div className="max-xl:block hidden shrink-0">
         <button
           type="button"
           onClick={() => setFormOpen((v) => !v)}
@@ -163,8 +178,8 @@ export function Exercises() {
         onSubmit={handleSubmit}
         className={cn(
           "shrink-0 rounded-xl border border-brand-border bg-brand-bg-soft p-4 flex flex-col gap-4",
-          "max-[640px]:rounded-lg",
-          !formOpen && !editTarget && "max-[640px]:hidden",
+          "max-xl:rounded-lg",
+          !formOpen && !editTarget && "max-xl:hidden",
         )}
       >
         <h2 className="text-lg font-medium text-brand-dark mb-3">
@@ -198,6 +213,21 @@ export function Exercises() {
               checked={time}
               onChange={setTime}
               label={t("workout_time")}
+            />
+            <Switch
+              checked={distance}
+              onChange={setDistance}
+              label={t("workout_distance")}
+            />
+            <Switch
+              checked={avgVelocity}
+              onChange={setAvgVelocity}
+              label={t("workout_avgVelocity")}
+            />
+            <Switch
+              checked={pace}
+              onChange={setPace}
+              label={t("workout_pace")}
             />
           </div>
         </div>
@@ -251,10 +281,24 @@ export function Exercises() {
           <div className="h-[42px] flex items-center gap-2">
             <button
               type="submit"
-              disabled={!name.trim() || (!weight && !reps && !time)}
+              disabled={
+                !name.trim() ||
+                (!weight &&
+                  !reps &&
+                  !time &&
+                  !distance &&
+                  !avgVelocity &&
+                  !pace)
+              }
               className={cn(
                 "rounded-lg border px-4 py-2 text-sm font-medium transition-colors",
-                name.trim() && (weight || reps || time)
+                name.trim() &&
+                  (weight ||
+                    reps ||
+                    time ||
+                    distance ||
+                    avgVelocity ||
+                    pace)
                   ? "border-transparent bg-brand-primary text-brand-bg hover:bg-brand-primary-hover"
                   : "border-brand-border bg-brand-code-bg text-brand-text-muted cursor-not-allowed",
               )}
@@ -326,6 +370,9 @@ export function Exercises() {
                       ex.weight && t("workout_weight"),
                       ex.reps && t("workout_reps"),
                       ex.time && t("workout_time"),
+                      ex.distance && t("workout_distance"),
+                      ex.avgVelocity && t("workout_avgVelocity"),
+                      ex.pace && t("workout_pace"),
                       (ex.all_muscle_groups?.length ?? 0) > 0
                         ? ex.all_muscle_groups
                             .map((m) => m.charAt(0).toUpperCase() + m.slice(1))

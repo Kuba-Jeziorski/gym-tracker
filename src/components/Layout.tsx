@@ -60,7 +60,6 @@ export function Layout() {
         "gap-0 md:gap-8",
       )}
     >
-      {/* Desktop aside */}
       <aside
         className={cn(
           "hidden md:flex",
@@ -109,7 +108,6 @@ export function Layout() {
         </nav>
       </aside>
 
-      {/* Mobile drawer + backdrop */}
       <div className={cn("md:hidden")}>
         {mobileNavOpen && (
           <button
@@ -178,7 +176,6 @@ export function Layout() {
       </div>
 
       <main className={cn("flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden")}>
-        {/* Mobile topbar */}
         <div className="md:hidden shrink-0 mb-3">
           <div className="rounded-xl border border-brand-border bg-brand-bg-soft px-3 py-2 flex items-center justify-between gap-3">
             <button

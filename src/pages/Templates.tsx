@@ -1,4 +1,5 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import SelectLib from "react-select";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useAllExercises } from "../contexts/CustomExercisesContext";
@@ -7,6 +8,7 @@ import type { WorkoutTemplate } from "../data/workoutTemplates";
 import { selectStylesMulti } from "../components/Select";
 import { ConfirmModal } from "../components/ConfirmModal";
 import { cn } from "../lib/utils";
+import { routes } from "../routes";
 
 const CUSTOM_PREFIX = "custom_";
 
@@ -22,14 +24,25 @@ function getExerciseLabel(
 
 export function Templates() {
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const allExercises = useAllExercises();
-  const { templates, addTemplate, updateTemplate, removeTemplate, isTemplateNameTaken } =
-    useWorkoutTemplates();
+  const {
+    templates,
+    addTemplate,
+    updateTemplate,
+    removeTemplate,
+    isTemplateNameTaken,
+  } = useWorkoutTemplates();
   const [templateName, setTemplateName] = useState("");
   const [selectedUniqueNames, setSelectedUniqueNames] = useState<string[]>([]);
   const [editTarget, setEditTarget] = useState<WorkoutTemplate | null>(null);
   const [removeTarget, setRemoveTarget] = useState<string | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    if (editTarget) setFormOpen(true);
+  }, [editTarget]);
 
   const options: Option[] = allExercises.map((ex) => ({
     value: ex.unique_name,
@@ -44,6 +57,7 @@ export function Templates() {
     setTemplateName("");
     setSelectedUniqueNames([]);
     setEditTarget(null);
+    setFormOpen(false);
   }, []);
 
   const handleEdit = useCallback((template: WorkoutTemplate) => {
@@ -86,13 +100,34 @@ export function Templates() {
         <h1 className="text-2xl font-semibold text-brand-dark mb-2">
           {t("templates_title")}
         </h1>
-        <p className="text-brand-text-muted mb-6">{t("templates_description")}</p>
+        <p className="text-brand-text-muted mb-6">
+          {t("templates_description")}
+        </p>
+      </div>
+
+      <div className="max-xl:block hidden shrink-0 mb-4">
+        <button
+          type="button"
+          onClick={() => setFormOpen((v) => !v)}
+          className={cn(
+            "w-full rounded-lg border px-4 py-2 text-sm font-medium transition-colors",
+            formOpen
+              ? "border-brand-border bg-brand-bg-soft text-brand-text"
+              : "border-transparent bg-brand-primary text-brand-bg hover:bg-brand-primary-hover",
+          )}
+        >
+          {formOpen ? t("workoutEdit_cancel") : t("templates_create")}
+        </button>
       </div>
 
       <form
         ref={formRef}
         onSubmit={handleSubmit}
-        className="shrink-0 rounded-xl border border-brand-border bg-brand-bg-soft p-4 mb-4"
+        className={cn(
+          "shrink-0 rounded-xl border border-brand-border bg-brand-bg-soft p-4 mb-4",
+          "max-xl:rounded-lg",
+          !formOpen && !editTarget && "max-xl:hidden",
+        )}
       >
         <h2 className="text-lg font-medium text-brand-dark mb-3">
           {editTarget ? t("templates_editTitle") : t("templates_create")}
@@ -114,7 +149,9 @@ export function Templates() {
                   : "border-brand-border",
               )}
               aria-invalid={nameIsDuplicate}
-              aria-describedby={nameIsDuplicate ? "template-name-error" : undefined}
+              aria-describedby={
+                nameIsDuplicate ? "template-name-error" : undefined
+              }
             />
             {nameIsDuplicate && (
               <span
@@ -156,10 +193,16 @@ export function Templates() {
           <div className="flex items-center gap-2">
             <button
               type="submit"
-              disabled={!templateName.trim() || nameIsDuplicate || selectedUniqueNames.length === 0}
+              disabled={
+                !templateName.trim() ||
+                nameIsDuplicate ||
+                selectedUniqueNames.length === 0
+              }
               className={cn(
                 "rounded-lg border px-4 py-2 text-sm font-medium transition-colors w-fit",
-                templateName.trim() && !nameIsDuplicate && selectedUniqueNames.length > 0
+                templateName.trim() &&
+                  !nameIsDuplicate &&
+                  selectedUniqueNames.length > 0
                   ? "border-transparent bg-brand-primary text-brand-bg hover:bg-brand-primary-hover"
                   : "border-brand-border bg-brand-code-bg text-brand-text-muted cursor-not-allowed",
               )}
@@ -187,39 +230,49 @@ export function Templates() {
         <div className="flex-1 min-h-0 min-w-0 flex flex-col">
           <ul
             className={cn(
-              "list-none m-0 p-0 space-y-2 flex-1 min-h-0 overflow-y-auto min-w-0 pr-1",
+              "list-none m-0 p-0 space-y-2 flex-1 min-h-0 overflow-y-auto min-w-0 pr-3",
             )}
           >
-          {templates.map((template) => (
-            <li
-              key={template.id}
-              className="flex items-center justify-between gap-2 rounded-lg border border-brand-border bg-brand-bg-soft px-4 py-3 list-none"
-            >
-              <div>
-                <p className="font-medium text-brand-dark">{template.name}</p>
-                <p className="text-sm text-brand-text-muted">
-                  {template.exerciseUniqueNames.length}{" "}
-                  {t("templates_exercises")}
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleEdit(template)}
-                  className="text-sm text-brand-text-muted hover:text-brand-primary transition-colors"
-                >
-                  {t("templates_edit")}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setRemoveTarget(template.id)}
-                  className="text-sm text-brand-text-muted hover:text-red-400 transition-colors"
-                >
-                  {t("workout_remove")}
-                </button>
-              </div>
-            </li>
-          ))}
+            {templates.map((template) => (
+              <li
+                key={template.id}
+                className="flex items-center justify-between gap-2 rounded-lg border border-brand-border bg-brand-bg-soft px-4 py-3 list-none"
+              >
+                <div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      navigate(routes.workout, {
+                        state: { tab: "completed", templateId: template.id },
+                      })
+                    }
+                    className="font-medium text-brand-dark hover:text-brand-primary transition-colors"
+                  >
+                    {template.name}
+                  </button>
+                  <p className="text-sm text-brand-text-muted">
+                    {template.exerciseUniqueNames.length}{" "}
+                    {t("templates_exercises")}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleEdit(template)}
+                    className="text-sm text-brand-text-muted hover:text-brand-primary transition-colors"
+                  >
+                    {t("templates_edit")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRemoveTarget(template.id)}
+                    className="text-sm text-brand-text-muted hover:text-red-400 transition-colors"
+                  >
+                    {t("workout_remove")}
+                  </button>
+                </div>
+              </li>
+            ))}
           </ul>
         </div>
       )}

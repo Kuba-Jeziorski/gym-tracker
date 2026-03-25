@@ -12,6 +12,9 @@ export type ExerciseRow = {
   weight: boolean;
   reps: boolean;
   time: boolean;
+  distance?: boolean;
+  avg_velocity?: boolean;
+  pace?: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -30,6 +33,9 @@ export type ExerciseUpdate = Partial<
     | "weight"
     | "reps"
     | "time"
+    | "distance"
+    | "avg_velocity"
+    | "pace"
     | "updated_at"
   >
 >;
@@ -43,6 +49,9 @@ export function toExercise(row: ExerciseRow): Exercise {
     weight: row.weight,
     reps: row.reps,
     time: row.time,
+    distance: row.distance ?? false,
+    avgVelocity: row.avg_velocity ?? false,
+    pace: row.pace ?? false,
   };
 }
 
