@@ -1,4 +1,10 @@
-import { useState, useEffect, useRef, useCallback, type FocusEventHandler } from "react";
+import {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  type FocusEventHandler,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm, useFieldArray, Controller } from "react-hook-form";
 import type { UseFormRegisterReturn } from "react-hook-form";
@@ -48,7 +54,7 @@ type WorkoutFormValues = {
   exercises: WorkoutExercise[];
 };
 
-const MAX_DRAFT_AGE_MS = 10 * 60 * 1000;
+const MAX_DRAFT_AGE_MS = 60 * 10 * 60 * 1000; // hour
 
 const defaultSet = (): SetValues => ({
   weight: "",
@@ -97,11 +103,15 @@ function canAddSet(
     const durationSec = exercise.time
       ? parseDurationToSeconds(last.time ?? "")
       : null;
-    const distanceKm = exercise.distance ? parseDistanceKm(last.distance ?? "") : null;
+    const distanceKm = exercise.distance
+      ? parseDistanceKm(last.distance ?? "")
+      : null;
     const avgVelocityKmh = exercise.avgVelocity
       ? parseAvgVelocityKmh(last.avgVelocity ?? "")
       : null;
-    const paceMinPerKm = exercise.pace ? parsePaceToMinPerKm(last.pace ?? "") : null;
+    const paceMinPerKm = exercise.pace
+      ? parsePaceToMinPerKm(last.pace ?? "")
+      : null;
 
     if (durationSec != null && avgVelocityKmh != null) return true;
     if (durationSec != null && paceMinPerKm != null) return true;
@@ -141,11 +151,15 @@ function isSetValidForExercise(
     const durationSec = exercise.time
       ? parseDurationToSeconds(set.time ?? "")
       : null;
-    const distanceKm = exercise.distance ? parseDistanceKm(set.distance ?? "") : null;
+    const distanceKm = exercise.distance
+      ? parseDistanceKm(set.distance ?? "")
+      : null;
     const avgVelocityKmh = exercise.avgVelocity
       ? parseAvgVelocityKmh(set.avgVelocity ?? "")
       : null;
-    const paceMinPerKm = exercise.pace ? parsePaceToMinPerKm(set.pace ?? "") : null;
+    const paceMinPerKm = exercise.pace
+      ? parsePaceToMinPerKm(set.pace ?? "")
+      : null;
 
     if (durationSec != null && avgVelocityKmh != null) return true;
     if (durationSec != null && paceMinPerKm != null) return true;
@@ -310,7 +324,13 @@ export function Workout() {
         : [];
     reset({ exercises: initialExercises });
     replaceExercises(initialExercises);
-  }, [currentWorkout?.id, consumeInitialExercises, reset, currentWorkout, replaceExercises]);
+  }, [
+    currentWorkout?.id,
+    consumeInitialExercises,
+    reset,
+    currentWorkout,
+    replaceExercises,
+  ]);
 
   useEffect(() => {
     if (!currentWorkout) return;
