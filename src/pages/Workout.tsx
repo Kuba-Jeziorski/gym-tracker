@@ -54,7 +54,7 @@ type WorkoutFormValues = {
   exercises: WorkoutExercise[];
 };
 
-const MAX_DRAFT_AGE_MS = 60 * 10 * 60 * 1000; // hour
+const MAX_DRAFT_AGE_MS = 24 * 60 * 60 * 1000; // 1 day
 
 const defaultSet = (): SetValues => ({
   weight: "",

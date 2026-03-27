@@ -53,11 +53,33 @@ export function Templates() {
     .map((value) => options.find((o) => o.value === value))
     .filter((o): o is Option => o != null);
 
+  const selectedExerciseItems = selectedUniqueNames
+    .map((uniqueName) => {
+      const exercise = allExercises.find((ex) => ex.unique_name === uniqueName);
+      if (!exercise) return null;
+      return {
+        uniqueName,
+        label: getExerciseLabel(uniqueName, exercise.name, t),
+      };
+    })
+    .filter(
+      (
+        item,
+      ): item is {
+        uniqueName: string;
+        label: string;
+      } => item != null,
+    );
+
   const resetForm = useCallback(() => {
     setTemplateName("");
     setSelectedUniqueNames([]);
     setEditTarget(null);
     setFormOpen(false);
+  }, []);
+
+  const handleRemoveExercise = useCallback((uniqueName: string) => {
+    setSelectedUniqueNames((prev) => prev.filter((value) => value !== uniqueName));
   }, []);
 
   const handleEdit = useCallback((template: WorkoutTemplate) => {
@@ -170,8 +192,9 @@ export function Templates() {
             <div className="w-full min-w-0">
               <SelectLib<Option, true>
                 isMulti
-                closeMenuOnSelect={false}
+                closeMenuOnSelect
                 hideSelectedOptions={false}
+                controlShouldRenderValue={false}
                 value={selectedOptions}
                 onChange={(selected) =>
                   setSelectedUniqueNames(
@@ -189,6 +212,29 @@ export function Templates() {
                 menuPosition="fixed"
               />
             </div>
+            {selectedExerciseItems.length > 0 && (
+              <ul className="mt-3 space-y-2">
+                {selectedExerciseItems.map((item, index) => (
+                  <li
+                    key={item.uniqueName}
+                    className="flex items-center justify-between gap-3 rounded-lg border border-brand-border bg-brand-bg px-3 py-2"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-brand-text">
+                        {index + 1}. {item.label}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveExercise(item.uniqueName)}
+                      className="text-xs text-brand-text-muted hover:text-red-400 transition-colors"
+                    >
+                      {t("workout_remove")}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </label>
           <div className="flex items-center gap-2">
             <button
