@@ -6,6 +6,7 @@ import { CurrentWorkoutProvider } from './contexts/CurrentWorkoutContext'
 import { AccountPreferencesProvider } from './contexts/AccountPreferencesContext'
 import { CompletedWorkoutsProvider } from './contexts/CompletedWorkoutsContext'
 import { CustomExercisesProvider } from './contexts/CustomExercisesContext'
+import { FavoriteExercisesProvider } from './contexts/FavoriteExercisesContext'
 import { WorkoutTemplatesProvider } from './contexts/WorkoutTemplatesContext'
 import './index.css'
 import App from './App.tsx'
@@ -31,17 +32,19 @@ createRoot(container).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <AccountPreferencesProvider>
-          <CompletedWorkoutsProvider>
-            <CustomExercisesProvider>
-              <WorkoutTemplatesProvider>
-                <CurrentWorkoutProvider>
-                  <App />
-                </CurrentWorkoutProvider>
-              </WorkoutTemplatesProvider>
-            </CustomExercisesProvider>
-          </CompletedWorkoutsProvider>
-        </AccountPreferencesProvider>
+        <FavoriteExercisesProvider>
+          <AccountPreferencesProvider>
+            <CompletedWorkoutsProvider>
+              <CustomExercisesProvider>
+                <WorkoutTemplatesProvider>
+                  <CurrentWorkoutProvider>
+                    <App />
+                  </CurrentWorkoutProvider>
+                </WorkoutTemplatesProvider>
+              </CustomExercisesProvider>
+            </CompletedWorkoutsProvider>
+          </AccountPreferencesProvider>
+        </FavoriteExercisesProvider>
       </AuthProvider>
     </QueryClientProvider>
   </StrictMode>,

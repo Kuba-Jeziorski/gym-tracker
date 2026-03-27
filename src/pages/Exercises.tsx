@@ -4,6 +4,7 @@ import SelectLib from "react-select";
 import { useLanguage } from "../contexts/LanguageContext";
 import { routes } from "../routes";
 import { useCustomExercises } from "../contexts/CustomExercisesContext";
+import { useFavoriteExercises } from "../contexts/FavoriteExercisesContext";
 import type { Exercise } from "../data/exercises";
 import { MUSCLE_GROUPS } from "../data/exercises";
 import { ConfirmModal } from "../components/ConfirmModal";
@@ -40,6 +41,7 @@ export function Exercises() {
     updateCustomExercise,
     removeCustomExercise,
   } = useCustomExercises();
+  const { isFavorite, toggleFavorite } = useFavoriteExercises();
   const [formOpen, setFormOpen] = useState(false);
   const [name, setName] = useState("");
   const [weight, setWeight] = useState(false);
@@ -158,12 +160,12 @@ export function Exercises() {
         <p className="text-brand-text-muted">{t("exercises_description")}</p>
       </header>
 
-      <div className="max-xl:block hidden shrink-0">
+      <div className="shrink-0">
         <button
           type="button"
           onClick={() => setFormOpen((v) => !v)}
           className={cn(
-            "w-full rounded-lg border px-4 py-2 text-sm font-medium transition-colors",
+            "w-fit max-[479px]:w-full rounded-lg border px-4 py-2 text-sm font-medium transition-colors",
             formOpen
               ? "border-brand-border bg-brand-bg-soft text-brand-text"
               : "border-transparent bg-brand-primary text-brand-bg hover:bg-brand-primary-hover",
@@ -179,7 +181,7 @@ export function Exercises() {
         className={cn(
           "shrink-0 rounded-xl border border-brand-border bg-brand-bg-soft p-4 flex flex-col gap-4",
           "max-xl:rounded-lg",
-          !formOpen && !editTarget && "max-xl:hidden",
+          !formOpen && !editTarget && "hidden",
         )}
       >
         <h2 className="text-lg font-medium text-brand-dark mb-3">
@@ -341,6 +343,26 @@ export function Exercises() {
               >
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => toggleFavorite(ex.unique_name)}
+                      aria-pressed={isFavorite(ex.unique_name)}
+                      aria-label={
+                        isFavorite(ex.unique_name)
+                          ? t("exercises_favoriteRemove")
+                          : t("exercises_favoriteToggle")
+                      }
+                      className={cn(
+                        "shrink-0 rounded-md p-1.5 leading-none transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary",
+                        isFavorite(ex.unique_name)
+                          ? "text-amber-400 hover:text-amber-300"
+                          : "text-brand-text-muted hover:text-brand-text",
+                      )}
+                    >
+                      <span aria-hidden className="text-lg">
+                        {isFavorite(ex.unique_name) ? "★" : "☆"}
+                      </span>
+                    </button>
                     <Link
                       to={routes.exerciseHistory(ex.unique_name)}
                       title={t("exercises_nameLinkTitle")}

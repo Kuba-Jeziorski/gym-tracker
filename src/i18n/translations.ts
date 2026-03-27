@@ -115,6 +115,11 @@ export const translations: Record<Locale, Record<string, string>> = {
     exercises_removeConfirmTitle: "Remove exercise",
     exercises_removeConfirmMessage:
       "Remove this custom exercise? It will no longer appear in the list.",
+    exercises_favoriteToggle: "Favorite exercise",
+    exercises_favoriteRemove: "Remove from favorites",
+    exercisePicker_favoritesOnly: "Exercise list: favorites only",
+    exercisePicker_favoritesOnlyDisabledHint:
+      "Star exercises on the Exercises page to use this filter.",
     exerciseHistory_back: "Back to Library",
     exerciseHistory_subtitle: "All sets you logged for this exercise, by workout date.",
     exerciseHistory_empty: "No sets logged for this exercise yet.",
@@ -123,7 +128,7 @@ export const translations: Record<Locale, Record<string, string>> = {
     templates_title: "Workout templates",
     templates_description:
       "Create templates with a name and a set of exercises to quickly start a workout.",
-    templates_create: "Create template",
+    templates_create: "Add custom template",
     templates_edit: "Edit",
     templates_editTitle: "Edit template",
     templates_namePlaceholder: "Template name",
@@ -385,6 +390,11 @@ export const translations: Record<Locale, Record<string, string>> = {
     exercises_removeConfirmTitle: "Usuń ćwiczenie",
     exercises_removeConfirmMessage:
       "Usunąć to własne ćwiczenie? Zniknie z listy.",
+    exercises_favoriteToggle: "Dodaj do ulubionych",
+    exercises_favoriteRemove: "Usuń z ulubionych",
+    exercisePicker_favoritesOnly: "Lista ćwiczeń: tylko ulubione",
+    exercisePicker_favoritesOnlyDisabledHint:
+      "Oznacz ćwiczenia gwiazdką na stronie Ćwiczenia, aby użyć filtra.",
     exerciseHistory_back: "Powrót do biblioteki",
     exerciseHistory_subtitle:
       "Wszystkie zapisane serie tego ćwiczenia, według daty treningu.",
@@ -394,7 +404,7 @@ export const translations: Record<Locale, Record<string, string>> = {
     templates_title: "Szablony treningów",
     templates_description:
       "Twórz szablony z nazwą i zestawem ćwiczeń, aby szybko rozpoczynać trening.",
-    templates_create: "Utwórz szablon",
+    templates_create: "Dodaj własny szablon",
     templates_edit: "Edytuj",
     templates_editTitle: "Edytuj szablon",
     templates_namePlaceholder: "Nazwa szablonu",

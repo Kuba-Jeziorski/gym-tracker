@@ -1,31 +1,33 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import SelectLib from "react-select";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useAllExercises } from "../contexts/CustomExercisesContext";
+import { useFavoriteExercises } from "../contexts/FavoriteExercisesContext";
 import { useWorkoutTemplates } from "../contexts/WorkoutTemplatesContext";
 import type { WorkoutTemplate } from "../data/workoutTemplates";
 import { selectStylesMulti } from "../components/Select";
 import { ConfirmModal } from "../components/ConfirmModal";
+import { Switch } from "../components/Switch";
 import { cn } from "../lib/utils";
 import { routes } from "../routes";
-
-const CUSTOM_PREFIX = "custom_";
+import {
+  buildSortedExerciseSelectOptions,
+  filterExerciseOptionsForPicker,
+  mergeExerciseOptionsWithValues,
+} from "../helpers/exerciseSelectOptions";
 
 type Option = { value: string; label: string };
-
-function getExerciseLabel(
-  uniqueName: string,
-  name: string,
-  t: (key: string) => string,
-): string {
-  return uniqueName.startsWith(CUSTOM_PREFIX) ? name : t(uniqueName);
-}
 
 export function Templates() {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const allExercises = useAllExercises();
+  const {
+    favoriteIdSet,
+    pickerFavoritesOnly,
+    setPickerFavoritesOnly,
+  } = useFavoriteExercises();
   const {
     templates,
     addTemplate,
@@ -44,10 +46,30 @@ export function Templates() {
     if (editTarget) setFormOpen(true);
   }, [editTarget]);
 
-  const options: Option[] = allExercises.map((ex) => ({
-    value: ex.unique_name,
-    label: getExerciseLabel(ex.unique_name, ex.name, t),
-  }));
+  const fullOptions = useMemo(
+    () => buildSortedExerciseSelectOptions(allExercises, t),
+    [allExercises, t],
+  );
+
+  const pickerOptions = useMemo(
+    () =>
+      filterExerciseOptionsForPicker(
+        fullOptions,
+        favoriteIdSet,
+        pickerFavoritesOnly,
+      ),
+    [fullOptions, favoriteIdSet, pickerFavoritesOnly],
+  );
+
+  const options: Option[] = useMemo(
+    () =>
+      mergeExerciseOptionsWithValues(
+        pickerOptions,
+        fullOptions,
+        selectedUniqueNames,
+      ),
+    [pickerOptions, fullOptions, selectedUniqueNames],
+  );
 
   const selectedOptions = selectedUniqueNames
     .map((value) => options.find((o) => o.value === value))
@@ -59,7 +81,9 @@ export function Templates() {
       if (!exercise) return null;
       return {
         uniqueName,
-        label: getExerciseLabel(uniqueName, exercise.name, t),
+        label: exercise.unique_name.startsWith("custom_")
+          ? exercise.name
+          : t(exercise.unique_name),
       };
     })
     .filter(
@@ -127,12 +151,12 @@ export function Templates() {
         </p>
       </div>
 
-      <div className="max-xl:block hidden shrink-0 mb-4">
+      <div className="shrink-0 mb-4">
         <button
           type="button"
           onClick={() => setFormOpen((v) => !v)}
           className={cn(
-            "w-full rounded-lg border px-4 py-2 text-sm font-medium transition-colors",
+            "w-fit max-[479px]:w-full rounded-lg border px-4 py-2 text-sm font-medium transition-colors",
             formOpen
               ? "border-brand-border bg-brand-bg-soft text-brand-text"
               : "border-transparent bg-brand-primary text-brand-bg hover:bg-brand-primary-hover",
@@ -148,13 +172,26 @@ export function Templates() {
         className={cn(
           "shrink-0 rounded-xl border border-brand-border bg-brand-bg-soft p-4 mb-4",
           "max-xl:rounded-lg",
-          !formOpen && !editTarget && "max-xl:hidden",
+          !formOpen && !editTarget && "hidden",
         )}
       >
         <h2 className="text-lg font-medium text-brand-dark mb-3">
           {editTarget ? t("templates_editTitle") : t("templates_create")}
         </h2>
         <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1">
+            <Switch
+              checked={pickerFavoritesOnly}
+              onChange={setPickerFavoritesOnly}
+              disabled={favoriteIdSet.size === 0}
+              label={t("exercisePicker_favoritesOnly")}
+            />
+            {favoriteIdSet.size === 0 && (
+              <p className="text-xs text-brand-text-muted max-w-xl">
+                {t("exercisePicker_favoritesOnlyDisabledHint")}
+              </p>
+            )}
+          </div>
           <label className="flex flex-col gap-1">
             <span className="text-sm text-brand-text-muted">
               {t("templates_namePlaceholder")}
@@ -282,9 +319,12 @@ export function Templates() {
             {templates.map((template) => (
               <li
                 key={template.id}
-                className="flex items-center justify-between gap-2 rounded-lg border border-brand-border bg-brand-bg-soft px-4 py-3 list-none"
+                className={cn(
+                  "rounded-lg border border-brand-border bg-brand-bg-soft px-4 py-3 list-none",
+                  "flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between",
+                )}
               >
-                <div>
+                <div className="min-w-0">
                   <button
                     type="button"
                     onClick={() =>
@@ -292,27 +332,33 @@ export function Templates() {
                         state: { tab: "completed", templateId: template.id },
                       })
                     }
-                    className="font-medium text-brand-dark hover:text-brand-primary transition-colors"
+                    className="font-medium text-brand-dark hover:text-brand-primary transition-colors text-left"
                   >
                     {template.name}
                   </button>
-                  <p className="text-sm text-brand-text-muted">
+                  <p className="text-sm text-brand-text-muted mt-1">
                     {template.exerciseUniqueNames.length}{" "}
                     {t("templates_exercises")}
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex gap-2 sm:items-center sm:justify-end">
                   <button
                     type="button"
                     onClick={() => handleEdit(template)}
-                    className="text-sm text-brand-text-muted hover:text-brand-primary transition-colors"
+                    className={cn(
+                      "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                      "border border-brand-border text-brand-text-muted hover:bg-brand-bg-soft",
+                    )}
                   >
                     {t("templates_edit")}
                   </button>
                   <button
                     type="button"
                     onClick={() => setRemoveTarget(template.id)}
-                    className="text-sm text-brand-text-muted hover:text-red-400 transition-colors"
+                    className={cn(
+                      "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                      "border border-brand-border text-brand-text-muted hover:bg-brand-bg-soft hover:text-red-400 hover:border-red-500/40",
+                    )}
                   >
                     {t("workout_remove")}
                   </button>

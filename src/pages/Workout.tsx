@@ -3,6 +3,7 @@ import {
   useEffect,
   useRef,
   useCallback,
+  useMemo,
   type FocusEventHandler,
 } from "react";
 import { useNavigate } from "react-router-dom";
@@ -14,6 +15,7 @@ import { useLanguage } from "../contexts/LanguageContext";
 import { useWeightUnit } from "../contexts/WeightUnitContext";
 import { useCompletedWorkouts } from "../contexts/CompletedWorkoutsContext";
 import { useAllExercises } from "../contexts/CustomExercisesContext";
+import { useFavoriteExercises } from "../contexts/FavoriteExercisesContext";
 import type { StoredWorkout } from "../data/workoutStorage";
 import { inputWeightToKg } from "../helpers/weightConversion";
 import {
@@ -28,6 +30,7 @@ import {
   clearCurrentWorkoutDraft,
 } from "../helpers/currentWorkoutDraftStorage";
 import { Select } from "../components/Select";
+import { Switch } from "../components/Switch";
 import { ConfirmModal } from "../components/ConfirmModal";
 import { routes } from "../routes";
 import { cn } from "../lib/utils";
@@ -35,6 +38,11 @@ import {
   preventViewportZoomOnInputFocus,
   restoreViewportAfterInputBlur,
 } from "../helpers/restoreViewportAfterInputBlur";
+import {
+  buildSortedExerciseSelectOptions,
+  filterExerciseOptionsForPicker,
+  withSelectedExerciseOption,
+} from "../helpers/exerciseSelectOptions";
 
 type SetValues = {
   weight?: string;
@@ -231,6 +239,11 @@ export function Workout() {
   const { t } = useLanguage();
   const { weightUnit } = useWeightUnit();
   const allExercises = useAllExercises();
+  const {
+    favoriteIdSet,
+    pickerFavoritesOnly,
+    setPickerFavoritesOnly,
+  } = useFavoriteExercises();
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
   const [removeSetTarget, setRemoveSetTarget] = useState<{
     exerciseIndex: number;
@@ -374,14 +387,20 @@ export function Workout() {
     };
   }, [currentWorkout, watch, watchedExercises]);
 
-  const exerciseSelectOptions = allExercises
-    .map((ex) => ({
-      value: ex.unique_name,
-      label: ex.unique_name.startsWith("custom_") ? ex.name : t(ex.unique_name),
-    }))
-    .sort((a, b) =>
-      a.label.localeCompare(b.label, undefined, { sensitivity: "base" }),
-    );
+  const fullExerciseOptions = useMemo(
+    () => buildSortedExerciseSelectOptions(allExercises, t),
+    [allExercises, t],
+  );
+
+  const pickerExerciseOptions = useMemo(
+    () =>
+      filterExerciseOptionsForPicker(
+        fullExerciseOptions,
+        favoriteIdSet,
+        pickerFavoritesOnly,
+      ),
+    [fullExerciseOptions, favoriteIdSet, pickerFavoritesOnly],
+  );
 
   const onFinish = handleSubmit((data) => {
     const templateForSave = currentWorkout!.templateId
@@ -562,6 +581,19 @@ export function Workout() {
         )}
       >
         <div className="rounded-lg border border-brand-border bg-brand-bg-soft p-4 mb-4 flex flex-col flex-1 min-h-0 xs:border-0 xs:p-0">
+          <div className="flex flex-col gap-1 mb-3 shrink-0">
+            <Switch
+              checked={pickerFavoritesOnly}
+              onChange={setPickerFavoritesOnly}
+              disabled={favoriteIdSet.size === 0}
+              label={t("exercisePicker_favoritesOnly")}
+            />
+            {favoriteIdSet.size === 0 && (
+              <p className="text-xs text-brand-text-muted max-w-xl">
+                {t("exercisePicker_favoritesOnlyDisabledHint")}
+              </p>
+            )}
+          </div>
           <ul
             ref={exerciseListScrollRef}
             onScroll={checkScroll}
@@ -576,6 +608,11 @@ export function Workout() {
                 (e) => e.unique_name === exerciseUniqueName,
               );
               const sets = watchedExercises?.[index]?.sets ?? [];
+              const exerciseSelectOptions = withSelectedExerciseOption(
+                pickerExerciseOptions,
+                exerciseUniqueName,
+                fullExerciseOptions,
+              );
 
               return (
                 <li
