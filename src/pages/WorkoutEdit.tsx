@@ -220,10 +220,14 @@ export function WorkoutEdit() {
     });
   }, [workout, weightUnit, reset]);
 
-  const exerciseSelectOptions = allExercises.map((ex) => ({
-    value: ex.unique_name,
-    label: ex.unique_name.startsWith("custom_") ? ex.name : t(ex.unique_name),
-  }));
+  const exerciseSelectOptions = allExercises
+    .map((ex) => ({
+      value: ex.unique_name,
+      label: ex.unique_name.startsWith("custom_") ? ex.name : t(ex.unique_name),
+    }))
+    .sort((a, b) =>
+      a.label.localeCompare(b.label, undefined, { sensitivity: "base" }),
+    );
 
   const onSave = handleSubmit(async (data) => {
     if (!id || !workout) return;
