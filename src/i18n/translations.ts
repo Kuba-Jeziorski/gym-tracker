@@ -62,6 +62,7 @@ export const translations: Record<Locale, Record<string, string>> = {
     workout_distance: "Distance",
     workout_avgVelocity: "Avg. velocity",
     workout_pace: "Pace",
+    workout_insertValue: "Insert value",
     workout_finish: "Finish workout",
     workout_noEmptySetsMessage:
       "You can't finish with empty sets. Fill every added set (weight/reps/time) or remove it.",
@@ -337,6 +338,7 @@ export const translations: Record<Locale, Record<string, string>> = {
     workout_distance: "Dystans",
     workout_avgVelocity: "Śr. prędkość",
     workout_pace: "Tempo",
+    workout_insertValue: "Wpisz wartość",
     workout_finish: "Zakończ trening",
     workout_noEmptySetsMessage:
       "Nie można zakończyć treningu z pustymi seriami. Uzupełnij każdą dodaną serię (waga/powtórzenia/czas) albo usuń ją.",

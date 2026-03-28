@@ -649,25 +649,7 @@ export function Workout() {
 
                   {exercise && (
                     <div className="space-y-2">
-                      {(sets as SetValues[]).map((_, setIndex) => {
-                        const prevSet =
-                          setIndex > 0
-                            ? (sets as SetValues[])[setIndex - 1]
-                            : null;
-                        const weightPlaceholder =
-                          prevSet?.weight?.trim() || t("workout_weight");
-                        const repsPlaceholder =
-                          prevSet?.reps?.trim() || t("workout_reps");
-                        const timePlaceholder =
-                          prevSet?.time?.trim() || t("workout_time");
-                        const distancePlaceholder =
-                          prevSet?.distance?.trim() || t("workout_distance");
-                        const avgVelocityPlaceholder =
-                          prevSet?.avgVelocity?.trim() ||
-                          t("workout_avgVelocity");
-                        const pacePlaceholder =
-                          prevSet?.pace?.trim() || t("workout_pace");
-                        return (
+                      {(sets as SetValues[]).map((_, setIndex) => (
                           <div
                             key={setIndex}
                             className={cn(
@@ -694,7 +676,7 @@ export function Workout() {
                                 <div className="flex items-center gap-1.5 mr-5 xs:mr-0">
                                   <input
                                     type="text"
-                                    placeholder={weightPlaceholder}
+                                    placeholder={t("workout_insertValue")}
                                     {...mergeRegisterWithViewportReset(
                                       register(
                                         `exercises.${index}.sets.${setIndex}.weight` as const,
@@ -719,7 +701,7 @@ export function Workout() {
                                 <>
                                   <input
                                     type="text"
-                                    placeholder={repsPlaceholder}
+                                    placeholder={t("workout_insertValue")}
                                     {...mergeRegisterWithViewportReset(
                                       register(
                                         `exercises.${index}.sets.${setIndex}.reps` as const,
@@ -740,7 +722,7 @@ export function Workout() {
                                 <div className="flex items-center gap-1.5">
                                   <input
                                     type="text"
-                                    placeholder={timePlaceholder}
+                                    placeholder={t("workout_insertValue")}
                                     {...mergeRegisterWithViewportReset(
                                       register(
                                         `exercises.${index}.sets.${setIndex}.time` as const,
@@ -761,7 +743,7 @@ export function Workout() {
                                 <div className="flex items-center gap-1.5">
                                   <input
                                     type="text"
-                                    placeholder={distancePlaceholder}
+                                    placeholder={t("workout_insertValue")}
                                     {...mergeRegisterWithViewportReset(
                                       register(
                                         `exercises.${index}.sets.${setIndex}.distance` as const,
@@ -782,7 +764,7 @@ export function Workout() {
                                 <div className="flex items-center gap-1.5">
                                   <input
                                     type="text"
-                                    placeholder={avgVelocityPlaceholder}
+                                    placeholder={t("workout_insertValue")}
                                     {...mergeRegisterWithViewportReset(
                                       register(
                                         `exercises.${index}.sets.${setIndex}.avgVelocity` as const,
@@ -803,7 +785,7 @@ export function Workout() {
                                 <div className="flex items-center gap-1.5">
                                   <input
                                     type="text"
-                                    placeholder={pacePlaceholder}
+                                    placeholder={t("workout_insertValue")}
                                     {...mergeRegisterWithViewportReset(
                                       register(
                                         `exercises.${index}.sets.${setIndex}.pace` as const,
@@ -822,8 +804,7 @@ export function Workout() {
                               )}
                             </div>
                           </div>
-                        );
-                      })}
+                        ))}
                       <button
                         type="button"
                         disabled={
