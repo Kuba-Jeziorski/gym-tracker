@@ -239,11 +239,8 @@ export function Workout() {
   const { t } = useLanguage();
   const { weightUnit } = useWeightUnit();
   const allExercises = useAllExercises();
-  const {
-    favoriteIdSet,
-    pickerFavoritesOnly,
-    setPickerFavoritesOnly,
-  } = useFavoriteExercises();
+  const { favoriteIdSet, pickerFavoritesOnly, setPickerFavoritesOnly } =
+    useFavoriteExercises();
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
   const [removeSetTarget, setRemoveSetTarget] = useState<{
     exerciseIndex: number;
@@ -259,6 +256,8 @@ export function Workout() {
   } | null>(null);
   const [atTop, setAtTop] = useState(true);
   const [atBottom, setAtBottom] = useState(true);
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
+  const [mobileEditorOpen, setMobileEditorOpen] = useState(false);
   const exerciseListScrollRef = useRef<HTMLUListElement>(null);
 
   const checkScroll = useCallback(() => {
@@ -315,6 +314,28 @@ export function Workout() {
   useEffect(() => {
     checkScroll();
   }, [exerciseFields.length, checkScroll]);
+
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 639px)");
+    const updateViewportFlag = () => {
+      setIsMobileViewport(media.matches);
+    };
+    updateViewportFlag();
+    media.addEventListener("change", updateViewportFlag);
+    return () => {
+      media.removeEventListener("change", updateViewportFlag);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!currentWorkout) {
+      setMobileEditorOpen(false);
+      return;
+    }
+    if (isMobileViewport) {
+      setMobileEditorOpen(true);
+    }
+  }, [currentWorkout, isMobileViewport]);
 
   useEffect(() => {
     if (!expiredDraftForThisWorkout) return;
@@ -555,24 +576,8 @@ export function Workout() {
     currentWorkout.templateId != null
       ? templates.find((t) => t.id === currentWorkout.templateId)
       : undefined;
-
-  return (
-    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-      <header className="shrink-0 mb-4">
-        <h1 className="text-2xl font-semibold text-brand-dark mb-1">
-          {t("workout_title")}
-        </h1>
-        <p className="text-brand-text-muted text-sm">
-          {t("workout_startedAt")}{" "}
-          {new Date(currentWorkout.startedAt).toLocaleString()}.
-        </p>
-        {template && (
-          <p className="text-brand-text-muted text-sm mt-0.5">
-            {t("workout_templateLabel")}: {template.name}
-          </p>
-        )}
-      </header>
-
+  const workoutEditorBody = (
+    <>
       <div
         className={cn(
           "flex-1 min-h-0 min-w-0 flex flex-col relative overflow-hidden scroll-fade-bottom scroll-fade-top",
@@ -650,161 +655,159 @@ export function Workout() {
                   {exercise && (
                     <div className="space-y-2">
                       {(sets as SetValues[]).map((_, setIndex) => (
-                          <div
-                            key={setIndex}
-                            className={cn(
-                              "text-sm",
-                              "xs:rounded-lg xs:border xs:border-brand-border xs:bg-brand-bg xs:p-3",
-                            )}
-                          >
-                            <div className="flex justify-start mb-1.5">
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setRemoveSetTarget({
-                                    exerciseIndex: index,
-                                    setIndex,
-                                  })
-                                }
-                                className="text-sm text-brand-text-muted hover:text-red-400 transition-colors"
-                              >
-                                {t("workout_removeSet")}
-                              </button>
-                            </div>
-                            <div className="flex flex-wrap items-center gap-2 gap-y-2">
-                              {exercise.weight && (
-                                <div className="flex items-center gap-1.5 whitespace-nowrap">
-                                  <input
-                                    type="text"
-                                    placeholder={t("workout_insertValue")}
-                                    {...mergeRegisterWithViewportReset(
-                                      register(
-                                        `exercises.${index}.sets.${setIndex}.weight` as const,
-                                      ),
-                                    )}
-                                    inputMode="decimal"
-                                    autoComplete="off"
-                                    spellCheck={false}
-                                    pattern="[0-9]*[.,]?[0-9]*"
-                                    className="min-w-[8rem] w-28 rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder"
-                                  />
-                                  <span className="text-brand-text-muted text-sm shrink-0">
-                                    {t(
-                                      weightUnit === "kg"
-                                        ? "unit_kg"
-                                        : "unit_lb",
-                                    )}
-                                  </span>
-                                </div>
-                              )}
-                              {exercise.reps && (
-                                <div className="flex items-center gap-1.5 whitespace-nowrap">
-                                  <input
-                                    type="text"
-                                    placeholder={t("workout_insertValue")}
-                                    {...mergeRegisterWithViewportReset(
-                                      register(
-                                        `exercises.${index}.sets.${setIndex}.reps` as const,
-                                      ),
-                                    )}
-                                    inputMode="numeric"
-                                    autoComplete="off"
-                                    spellCheck={false}
-                                    pattern="[0-9]*[.,]?[0-9]*"
-                                    className="min-w-[8rem] w-24 rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder"
-                                  />
-                                  <span className="text-brand-text-muted text-sm shrink-0">
-                                    {t("workout_reps")}
-                                  </span>
-                                </div>
-                              )}
-                              {exercise.time && (
-                                <div className="flex items-center gap-1.5 whitespace-nowrap">
-                                  <input
-                                    type="text"
-                                    placeholder={t("workout_insertValue")}
-                                    {...mergeRegisterWithViewportReset(
-                                      register(
-                                        `exercises.${index}.sets.${setIndex}.time` as const,
-                                      ),
-                                    )}
-                                    inputMode="text"
-                                    autoComplete="off"
-                                    spellCheck={false}
-                                    pattern="[0-9:.,]*"
-                                    className="min-w-[8rem] w-28 rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder"
-                                  />
-                                  <span className="text-brand-text-muted text-sm shrink-0">
-                                    {t("unit_s")}
-                                  </span>
-                                </div>
-                              )}
-                              {exercise.distance && (
-                                <div className="flex items-center gap-1.5 whitespace-nowrap">
-                                  <input
-                                    type="text"
-                                    placeholder={t("workout_insertValue")}
-                                    {...mergeRegisterWithViewportReset(
-                                      register(
-                                        `exercises.${index}.sets.${setIndex}.distance` as const,
-                                      ),
-                                    )}
-                                    inputMode="decimal"
-                                    autoComplete="off"
-                                    spellCheck={false}
-                                    pattern="[0-9]*[.,]?[0-9]*"
-                                    className="min-w-[8rem] w-28 rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder"
-                                  />
-                                  <span className="text-brand-text-muted text-sm shrink-0">
-                                    {t("unit_km")}
-                                  </span>
-                                </div>
-                              )}
-                              {exercise.avgVelocity && (
-                                <div className="flex items-center gap-1.5 whitespace-nowrap">
-                                  <input
-                                    type="text"
-                                    placeholder={t("workout_insertValue")}
-                                    {...mergeRegisterWithViewportReset(
-                                      register(
-                                        `exercises.${index}.sets.${setIndex}.avgVelocity` as const,
-                                      ),
-                                    )}
-                                    inputMode="decimal"
-                                    autoComplete="off"
-                                    spellCheck={false}
-                                    pattern="[0-9]*[.,]?[0-9]*"
-                                    className="min-w-[8rem] w-28 rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder"
-                                  />
-                                  <span className="text-brand-text-muted text-sm shrink-0">
-                                    {t("unit_kmh")}
-                                  </span>
-                                </div>
-                              )}
-                              {exercise.pace && (
-                                <div className="flex items-center gap-1.5 whitespace-nowrap">
-                                  <input
-                                    type="text"
-                                    placeholder={t("workout_insertValue")}
-                                    {...mergeRegisterWithViewportReset(
-                                      register(
-                                        `exercises.${index}.sets.${setIndex}.pace` as const,
-                                      ),
-                                    )}
-                                    inputMode="text"
-                                    autoComplete="off"
-                                    spellCheck={false}
-                                    pattern="[0-9:.,]*"
-                                    className="min-w-[8rem] w-28 rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder"
-                                  />
-                                  <span className="text-brand-text-muted text-sm shrink-0">
-                                    {t("unit_min_per_km")}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
+                        <div
+                          key={setIndex}
+                          className={cn(
+                            "text-sm",
+                            "xs:rounded-lg xs:border xs:border-brand-border xs:bg-brand-bg xs:p-3",
+                          )}
+                        >
+                          <div className="flex justify-start mb-1.5">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setRemoveSetTarget({
+                                  exerciseIndex: index,
+                                  setIndex,
+                                })
+                              }
+                              className="text-sm text-brand-text-muted hover:text-red-400 transition-colors"
+                            >
+                              {t("workout_removeSet")}
+                            </button>
                           </div>
-                        ))}
+                          <div className="flex flex-wrap items-center gap-2 gap-y-2 xs:flex-col xs:items-start">
+                            {exercise.weight && (
+                              <div className="flex items-center gap-1.5 whitespace-nowrap 2xs:w-full">
+                                <input
+                                  type="text"
+                                  placeholder={t("workout_insertValue")}
+                                  {...mergeRegisterWithViewportReset(
+                                    register(
+                                      `exercises.${index}.sets.${setIndex}.weight` as const,
+                                    ),
+                                  )}
+                                  inputMode="decimal"
+                                  autoComplete="off"
+                                  spellCheck={false}
+                                  pattern="[0-9]*[.,]?[0-9]*"
+                                  className="min-w-[8rem] w-28 rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder"
+                                />
+                                <span className="text-brand-text-muted text-sm shrink-0">
+                                  {t(
+                                    weightUnit === "kg" ? "unit_kg" : "unit_lb",
+                                  )}
+                                </span>
+                              </div>
+                            )}
+                            {exercise.reps && (
+                              <div className="flex items-center gap-1.5 whitespace-nowrap 2xs:w-full">
+                                <input
+                                  type="text"
+                                  placeholder={t("workout_insertValue")}
+                                  {...mergeRegisterWithViewportReset(
+                                    register(
+                                      `exercises.${index}.sets.${setIndex}.reps` as const,
+                                    ),
+                                  )}
+                                  inputMode="numeric"
+                                  autoComplete="off"
+                                  spellCheck={false}
+                                  pattern="[0-9]*[.,]?[0-9]*"
+                                  className="min-w-[8rem] w-24 rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder"
+                                />
+                                <span className="text-brand-text-muted text-sm shrink-0">
+                                  {t("workout_reps")}
+                                </span>
+                              </div>
+                            )}
+                            {exercise.time && (
+                              <div className="flex items-center gap-1.5 whitespace-nowrap 2xs:w-full">
+                                <input
+                                  type="text"
+                                  placeholder={t("workout_insertValue")}
+                                  {...mergeRegisterWithViewportReset(
+                                    register(
+                                      `exercises.${index}.sets.${setIndex}.time` as const,
+                                    ),
+                                  )}
+                                  inputMode="text"
+                                  autoComplete="off"
+                                  spellCheck={false}
+                                  pattern="[0-9:.,]*"
+                                  className="min-w-[8rem] w-28 rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder"
+                                />
+                                <span className="text-brand-text-muted text-sm shrink-0">
+                                  {t("unit_s")}
+                                </span>
+                              </div>
+                            )}
+                            {exercise.distance && (
+                              <div className="flex items-center gap-1.5 whitespace-nowrap 2xs:w-full">
+                                <input
+                                  type="text"
+                                  placeholder={t("workout_insertValue")}
+                                  {...mergeRegisterWithViewportReset(
+                                    register(
+                                      `exercises.${index}.sets.${setIndex}.distance` as const,
+                                    ),
+                                  )}
+                                  inputMode="decimal"
+                                  autoComplete="off"
+                                  spellCheck={false}
+                                  pattern="[0-9]*[.,]?[0-9]*"
+                                  className="min-w-[8rem] w-28 rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder"
+                                />
+                                <span className="text-brand-text-muted text-sm shrink-0">
+                                  {t("unit_km")}
+                                </span>
+                              </div>
+                            )}
+                            {exercise.avgVelocity && (
+                              <div className="flex items-center gap-1.5 whitespace-nowrap 2xs:w-full">
+                                <input
+                                  type="text"
+                                  placeholder={t("workout_insertValue")}
+                                  {...mergeRegisterWithViewportReset(
+                                    register(
+                                      `exercises.${index}.sets.${setIndex}.avgVelocity` as const,
+                                    ),
+                                  )}
+                                  inputMode="decimal"
+                                  autoComplete="off"
+                                  spellCheck={false}
+                                  pattern="[0-9]*[.,]?[0-9]*"
+                                  className="min-w-[8rem] w-28 rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder"
+                                />
+                                <span className="text-brand-text-muted text-sm shrink-0">
+                                  {t("unit_kmh")}
+                                </span>
+                              </div>
+                            )}
+                            {exercise.pace && (
+                              <div className="flex items-center gap-1.5 whitespace-nowrap 2xs:w-full">
+                                <input
+                                  type="text"
+                                  placeholder={t("workout_insertValue")}
+                                  {...mergeRegisterWithViewportReset(
+                                    register(
+                                      `exercises.${index}.sets.${setIndex}.pace` as const,
+                                    ),
+                                  )}
+                                  inputMode="text"
+                                  autoComplete="off"
+                                  spellCheck={false}
+                                  pattern="[0-9:.,]*"
+                                  className="min-w-[8rem] w-28 rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder"
+                                />
+                                <span className="text-brand-text-muted text-sm shrink-0">
+                                  {t("unit_min_per_km")}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
                       <button
                         type="button"
                         disabled={
@@ -886,6 +889,59 @@ export function Workout() {
           {t("workout_discard")}
         </button>
       </footer>
+    </>
+  );
+
+  return (
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+      <header className="shrink-0 mb-4">
+        <h1 className="text-2xl font-semibold text-brand-dark mb-1">
+          {t("workout_title")}
+        </h1>
+        <p className="text-brand-text-muted text-sm">
+          {t("workout_startedAt")}{" "}
+          {new Date(currentWorkout.startedAt).toLocaleString()}.
+        </p>
+        {template && (
+          <p className="text-brand-text-muted text-sm mt-0.5">
+            {t("workout_templateLabel")}: {template.name}
+          </p>
+        )}
+      </header>
+      <div className="hidden sm:flex sm:flex-1 sm:min-h-0 sm:flex-col">
+        {workoutEditorBody}
+      </div>
+      <div className="sm:hidden">
+        {!mobileEditorOpen && (
+          <button
+            type="button"
+            onClick={() => setMobileEditorOpen(true)}
+            className="w-full rounded-lg border border-brand-primary text-brand-primary px-4 py-2 font-medium hover:bg-brand-primary/10 transition-colors"
+          >
+            {t("workout_title")}
+          </button>
+        )}
+        {mobileEditorOpen && (
+          <div className="fixed inset-0 z-50 bg-brand-bg-soft p-4 flex flex-col">
+            <div className="shrink-0 mb-3 flex items-center justify-between gap-3">
+              <h2 className="text-lg font-semibold text-brand-dark">
+                {t("workout_title")}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setMobileEditorOpen(false)}
+                className="rounded-lg border border-brand-border px-3 py-1.5 text-sm text-brand-text hover:bg-brand-bg transition-colors"
+                aria-label={t("nav_close")}
+              >
+                {t("nav_close")}
+              </button>
+            </div>
+            <div className="flex-1 min-h-0 flex flex-col">
+              {workoutEditorBody}
+            </div>
+          </div>
+        )}
+      </div>
       <ConfirmModal
         open={discardModalOpen}
         title={t("workout_discardConfirmTitle")}
