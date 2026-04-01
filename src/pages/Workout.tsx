@@ -673,7 +673,7 @@ export function Workout() {
                             </div>
                             <div className="flex flex-wrap items-center gap-2 gap-y-2">
                               {exercise.weight && (
-                                <div className="flex items-center gap-1.5 mr-5 xs:mr-0">
+                                <div className="flex items-center gap-1.5 whitespace-nowrap">
                                   <input
                                     type="text"
                                     placeholder={t("workout_insertValue")}
@@ -698,7 +698,7 @@ export function Workout() {
                                 </div>
                               )}
                               {exercise.reps && (
-                                <>
+                                <div className="flex items-center gap-1.5 whitespace-nowrap">
                                   <input
                                     type="text"
                                     placeholder={t("workout_insertValue")}
@@ -716,10 +716,10 @@ export function Workout() {
                                   <span className="text-brand-text-muted text-sm shrink-0">
                                     {t("workout_reps")}
                                   </span>
-                                </>
+                                </div>
                               )}
                               {exercise.time && (
-                                <div className="flex items-center gap-1.5">
+                                <div className="flex items-center gap-1.5 whitespace-nowrap">
                                   <input
                                     type="text"
                                     placeholder={t("workout_insertValue")}
@@ -740,7 +740,7 @@ export function Workout() {
                                 </div>
                               )}
                               {exercise.distance && (
-                                <div className="flex items-center gap-1.5">
+                                <div className="flex items-center gap-1.5 whitespace-nowrap">
                                   <input
                                     type="text"
                                     placeholder={t("workout_insertValue")}
@@ -761,7 +761,7 @@ export function Workout() {
                                 </div>
                               )}
                               {exercise.avgVelocity && (
-                                <div className="flex items-center gap-1.5">
+                                <div className="flex items-center gap-1.5 whitespace-nowrap">
                                   <input
                                     type="text"
                                     placeholder={t("workout_insertValue")}
@@ -782,7 +782,7 @@ export function Workout() {
                                 </div>
                               )}
                               {exercise.pace && (
-                                <div className="flex items-center gap-1.5">
+                                <div className="flex items-center gap-1.5 whitespace-nowrap">
                                   <input
                                     type="text"
                                     placeholder={t("workout_insertValue")}
