@@ -808,38 +808,78 @@ export function Workout() {
                           </div>
                         </div>
                       ))}
-                      <button
-                        type="button"
-                        disabled={
-                          !canAddSet(
-                            allExercises,
-                            sets as SetValues[],
-                            exerciseUniqueName,
-                          )
-                        }
-                        onClick={() => {
-                          const nextSet = defaultSet();
-                          const all = watch("exercises") ?? [];
-                          const updated = all.map((ex, i) =>
-                            i === index
-                              ? { ...ex, sets: [...(ex.sets ?? []), nextSet] }
-                              : ex,
-                          );
-                          setValue("exercises", updated);
-                        }}
-                        className={cn(
-                          "text-sm rounded px-2 py-1 border transition-colors",
-                          canAddSet(
-                            allExercises,
-                            sets as SetValues[],
-                            exerciseUniqueName,
-                          )
-                            ? "border-brand-primary text-brand-primary hover:bg-brand-primary/10"
-                            : "border-brand-border bg-brand-code-bg text-brand-text-muted cursor-not-allowed",
-                        )}
-                      >
-                        {t("workout_addSet")}
-                      </button>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          disabled={
+                            !canAddSet(
+                              allExercises,
+                              sets as SetValues[],
+                              exerciseUniqueName,
+                            )
+                          }
+                          onClick={() => {
+                            const nextSet = defaultSet();
+                            const all = watch("exercises") ?? [];
+                            const updated = all.map((ex, i) =>
+                              i === index
+                                ? { ...ex, sets: [...(ex.sets ?? []), nextSet] }
+                                : ex,
+                            );
+                            setValue("exercises", updated);
+                          }}
+                          className={cn(
+                            "text-sm rounded px-2 py-1 border transition-colors",
+                            canAddSet(
+                              allExercises,
+                              sets as SetValues[],
+                              exerciseUniqueName,
+                            )
+                              ? "border-brand-primary text-brand-primary hover:bg-brand-primary/10"
+                              : "border-brand-border bg-brand-code-bg text-brand-text-muted cursor-not-allowed",
+                          )}
+                        >
+                          {t("workout_addSet")}
+                        </button>
+                        <button
+                          type="button"
+                          disabled={
+                            !canAddSet(
+                              allExercises,
+                              sets as SetValues[],
+                              exerciseUniqueName,
+                            ) || sets.length === 0
+                          }
+                          onClick={() => {
+                            const all = watch("exercises") ?? [];
+                            const updated = all.map((ex, i) => {
+                              if (i !== index) return ex;
+                              const currentSets = ex.sets ?? [];
+                              const lastSet = currentSets[currentSets.length - 1];
+                              const duplicatedSet = lastSet
+                                ? { ...lastSet }
+                                : defaultSet();
+                              return {
+                                ...ex,
+                                sets: [...currentSets, duplicatedSet],
+                              };
+                            });
+                            setValue("exercises", updated);
+                          }}
+                          className={cn(
+                            "text-sm rounded px-2 py-1 border transition-colors",
+                            canAddSet(
+                              allExercises,
+                              sets as SetValues[],
+                              exerciseUniqueName,
+                            ) && sets.length > 0
+                              ? "border-brand-primary text-brand-primary hover:bg-brand-primary/10"
+                              : "border-brand-border bg-brand-code-bg text-brand-text-muted cursor-not-allowed",
+                          )}
+                        >
+                          {t("workout_duplicateSet")}
+                        </button>
+                      </div>
                     </div>
                   )}
                 </li>

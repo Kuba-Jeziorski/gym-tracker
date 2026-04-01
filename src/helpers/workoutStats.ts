@@ -100,9 +100,46 @@ export function countTotalSets(workouts: StoredWorkout[]): number {
   return n
 }
 
-export function getWorkoutsInRange(workouts: StoredWorkout[], daysBack: number): StoredWorkout[] {
-  const since = Date.now() - daysBack * 24 * 60 * 60 * 1000
-  return workouts.filter((w) => new Date(w.completedAt).getTime() >= since)
+/** Monday 00:00:00.000 local time for the calendar week containing `d`. */
+function startOfWeekMonday(d: Date): Date {
+  const mon = new Date(d)
+  mon.setDate(d.getDate() - ((d.getDay() + 6) % 7))
+  mon.setHours(0, 0, 0, 0)
+  return mon
+}
+
+/** Previous calendar week's Monday 00:00 from a Date that is already week-start Monday. */
+function previousWeekMondayStart(weekStartMonday: Date): Date {
+  const d = new Date(weekStartMonday)
+  d.setDate(d.getDate() - 7)
+  return d
+}
+
+/** Workouts completed from Monday 00:00 (inclusive) through the following Monday 00:00 (exclusive). */
+export function getWorkoutsThisCalendarWeek(workouts: StoredWorkout[]): StoredWorkout[] {
+  const now = new Date()
+  const weekStart = startOfWeekMonday(now)
+  const weekEndExclusive = new Date(weekStart)
+  weekEndExclusive.setDate(weekEndExclusive.getDate() + 7)
+  const startMs = weekStart.getTime()
+  const endMs = weekEndExclusive.getTime()
+  return workouts.filter((w) => {
+    const t = new Date(w.completedAt).getTime()
+    return t >= startMs && t < endMs
+  })
+}
+
+/** Workouts completed in the current calendar month (local time). */
+export function getWorkoutsThisCalendarMonth(workouts: StoredWorkout[]): StoredWorkout[] {
+  const now = new Date()
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0)
+  const monthEndExclusive = new Date(now.getFullYear(), now.getMonth() + 1, 1, 0, 0, 0, 0)
+  const startMs = monthStart.getTime()
+  const endMs = monthEndExclusive.getTime()
+  return workouts.filter((w) => {
+    const t = new Date(w.completedAt).getTime()
+    return t >= startMs && t < endMs
+  })
 }
 
 export function getCurrentStreakWeeks(workouts: StoredWorkout[]): number {
@@ -120,16 +157,14 @@ export function getCurrentStreakWeeks(workouts: StoredWorkout[]): number {
   }
   const weeks = Array.from(weekKeys).sort((a, b) => Number(b) - Number(a))
   const now = new Date()
-  const thisWeekStart = new Date(now)
-  thisWeekStart.setDate(now.getDate() - ((now.getDay() + 6) % 7))
-  thisWeekStart.setHours(0, 0, 0, 0)
+  const thisWeekStart = startOfWeekMonday(now)
   let streak = 0
-  let expected = thisWeekStart.getTime()
+  let expectedMonday = thisWeekStart
   for (const key of weeks) {
     const weekStart = parseInt(key, 10)
-    if (weekStart !== expected) break
+    if (weekStart !== expectedMonday.getTime()) break
     streak++
-    expected -= 7 * 24 * 60 * 60 * 1000
+    expectedMonday = previousWeekMondayStart(expectedMonday)
   }
   return streak
 }

@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useCurrentWorkout } from "../contexts/CurrentWorkoutContext";
@@ -12,7 +12,8 @@ import type { StoredWorkout } from "../data/workoutStorage";
 import {
   computePersonalBests,
   countTotalSets,
-  getWorkoutsInRange,
+  getWorkoutsThisCalendarWeek,
+  getWorkoutsThisCalendarMonth,
   getCurrentStreakWeeks,
   formatPBDate,
   formatTimeSeconds,
@@ -28,6 +29,24 @@ function formatDMY(d: Date) {
     (d.getMonth() + 1).toString().padStart(2, "0"),
     d.getFullYear(),
   ].join(".");
+}
+
+function findVerticalScrollParent(
+  start: HTMLElement | null,
+): HTMLElement | null {
+  let p = start?.parentElement ?? null;
+  while (p) {
+    const { overflowY } = getComputedStyle(p);
+    if (
+      overflowY === "auto" ||
+      overflowY === "scroll" ||
+      overflowY === "overlay"
+    ) {
+      return p;
+    }
+    p = p.parentElement;
+  }
+  return null;
 }
 
 function getExerciseDisplayName(
@@ -84,7 +103,9 @@ function RecentWorkoutCard({
                   {i < exerciseLabels.length - 1 && <span>·</span>}
                 </li>
               ))}
-              {more > 0 && <li className="text-brand-text-muted/80">+{more}</li>}
+              {more > 0 && (
+                <li className="text-brand-text-muted/80">+{more}</li>
+              )}
             </ul>
           ) : (
             <span className="text-xs text-brand-text-muted">—</span>
@@ -132,7 +153,9 @@ function RecentWorkoutCard({
                     {i < exerciseLabels.length - 1 && <span>·</span>}
                   </li>
                 ))}
-                {more > 0 && <li className="text-brand-text-muted/80">+{more}</li>}
+                {more > 0 && (
+                  <li className="text-brand-text-muted/80">+{more}</li>
+                )}
               </ul>
             ) : (
               <span className="text-xs text-brand-text-muted">—</span>
@@ -145,6 +168,8 @@ function RecentWorkoutCard({
 }
 
 export function Dashboard() {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [padForScrollbar, setPadForScrollbar] = useState(false);
   const { t } = useLanguage();
   const { currentWorkout } = useCurrentWorkout();
   const { workouts, isLoading } = useCompletedWorkouts();
@@ -165,8 +190,8 @@ export function Dashboard() {
     : t("dashboard_title");
 
   const stats = useMemo(() => {
-    const thisWeek = getWorkoutsInRange(workouts, 7);
-    const thisMonth = getWorkoutsInRange(workouts, 30);
+    const thisWeek = getWorkoutsThisCalendarWeek(workouts);
+    const thisMonth = getWorkoutsThisCalendarMonth(workouts);
     return {
       trainingsCompleted: workouts.length,
       totalSets: countTotalSets(workouts),
@@ -180,6 +205,7 @@ export function Dashboard() {
     () => computePersonalBests(workouts),
     [workouts],
   );
+
   const pbList = useMemo(
     () =>
       Array.from(personalBests.entries())
@@ -192,8 +218,44 @@ export function Dashboard() {
     [personalBests, allExercises, t],
   );
 
+  useLayoutEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    const scrollParent =
+      findVerticalScrollParent(root) ?? document.documentElement;
+
+    const update = () => {
+      const gap = scrollParent.scrollHeight - scrollParent.clientHeight;
+      setPadForScrollbar(gap > 0.5);
+    };
+
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(root);
+    ro.observe(scrollParent);
+    window.addEventListener("resize", update);
+    window.visualViewport?.addEventListener("resize", update);
+    let rafInner = 0;
+    const rafOuter = requestAnimationFrame(() => {
+      rafInner = requestAnimationFrame(update);
+    });
+    return () => {
+      cancelAnimationFrame(rafOuter);
+      cancelAnimationFrame(rafInner);
+      ro.disconnect();
+      window.removeEventListener("resize", update);
+      window.visualViewport?.removeEventListener("resize", update);
+    };
+  }, [workouts, isLoading, pbList]);
+
   return (
-    <div className="flex flex-col gap-8">
+    <div
+      ref={rootRef}
+      className={cn(
+        "flex flex-col gap-8",
+        padForScrollbar && "md:pr-2 lg:pr-0",
+      )}
+    >
       <header>
         <h1 className="text-2xl font-semibold text-brand-dark mb-1">
           {greeting}
