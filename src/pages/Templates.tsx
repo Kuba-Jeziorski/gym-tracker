@@ -23,11 +23,8 @@ export function Templates() {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const allExercises = useAllExercises();
-  const {
-    favoriteIdSet,
-    pickerFavoritesOnly,
-    setPickerFavoritesOnly,
-  } = useFavoriteExercises();
+  const { favoriteIdSet, pickerFavoritesOnly, setPickerFavoritesOnly } =
+    useFavoriteExercises();
   const {
     templates,
     addTemplate,
@@ -103,7 +100,9 @@ export function Templates() {
   }, []);
 
   const handleRemoveExercise = useCallback((uniqueName: string) => {
-    setSelectedUniqueNames((prev) => prev.filter((value) => value !== uniqueName));
+    setSelectedUniqueNames((prev) =>
+      prev.filter((value) => value !== uniqueName),
+    );
   }, []);
 
   const handleEdit = useCallback((template: WorkoutTemplate) => {
@@ -141,7 +140,7 @@ export function Templates() {
   };
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+    <div className="flex flex-col flex-1 min-h-0 overflow-y-auto pr-3">
       <div className="shrink-0">
         <h1 className="text-2xl font-semibold text-brand-dark mb-2">
           {t("templates_title")}
@@ -310,12 +309,8 @@ export function Templates() {
           {t("templates_empty")}
         </p>
       ) : (
-        <div className="flex-1 min-h-0 min-w-0 flex flex-col">
-          <ul
-            className={cn(
-              "list-none m-0 p-0 space-y-2 flex-1 min-h-0 overflow-y-auto min-w-0 pr-3",
-            )}
-          >
+        <div className="min-w-0 flex flex-col pb-1">
+          <ul className={cn("list-none m-0 p-0 space-y-2 min-w-0 pr-3")}>
             {templates.map((template) => (
               <li
                 key={template.id}
