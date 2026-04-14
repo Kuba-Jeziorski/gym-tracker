@@ -17,6 +17,7 @@ import { fetchProfile, upsertProfile } from "../services/profilesDb";
 
 export type UserGender = "male" | "female";
 export type WeightUnit = "kg" | "lb";
+export type MobileFontSizeMode = "standard" | "enlarged";
 
 export type UserProfile = {
   name: string;
@@ -37,6 +38,8 @@ type AccountPreferencesValue = {
   setLocale: (locale: Locale) => void;
   weightUnit: WeightUnit;
   setWeightUnit: (unit: WeightUnit) => void;
+  mobileFontSizeMode: MobileFontSizeMode;
+  setMobileFontSizeMode: (mode: MobileFontSizeMode) => void;
   profile: UserProfile;
   setName: (name: string) => void;
   setWeightKg: (weightKg: number | null) => void;
@@ -53,6 +56,12 @@ const AccountPreferencesContext = createContext<AccountPreferencesValue | null>(
   null
 );
 
+function parseMobileFontSizeMode(
+  value: string | null | undefined,
+): MobileFontSizeMode {
+  return value === "enlarged" ? "enlarged" : "standard";
+}
+
 function rowToProfile(row: {
   name: string | null;
   weight_kg: number | null;
@@ -60,7 +69,13 @@ function rowToProfile(row: {
   gender: string | null;
   locale: string;
   weight_unit: string;
-}): { locale: Locale; weightUnit: WeightUnit; profile: UserProfile } {
+  mobile_font_size_mode?: string | null;
+}): {
+  locale: Locale;
+  weightUnit: WeightUnit;
+  profile: UserProfile;
+  mobileFontSizeMode: MobileFontSizeMode;
+} {
   return {
     locale: row.locale === "pl" ? "pl" : "en",
     weightUnit: row.weight_unit === "lb" ? "lb" : "kg",
@@ -73,6 +88,7 @@ function rowToProfile(row: {
           ? row.gender
           : null,
     },
+    mobileFontSizeMode: parseMobileFontSizeMode(row.mobile_font_size_mode),
   };
 }
 
@@ -87,12 +103,23 @@ function numClose(
 }
 
 function samePrefs(
-  a: { profile: UserProfile; locale: Locale; weightUnit: WeightUnit },
-  b: { profile: UserProfile; locale: Locale; weightUnit: WeightUnit }
+  a: {
+    profile: UserProfile;
+    locale: Locale;
+    weightUnit: WeightUnit;
+    mobileFontSizeMode: MobileFontSizeMode;
+  },
+  b: {
+    profile: UserProfile;
+    locale: Locale;
+    weightUnit: WeightUnit;
+    mobileFontSizeMode: MobileFontSizeMode;
+  },
 ): boolean {
   return (
     a.locale === b.locale &&
     a.weightUnit === b.weightUnit &&
+    a.mobileFontSizeMode === b.mobileFontSizeMode &&
     a.profile.name === b.profile.name &&
     numClose(a.profile.weightKg, b.profile.weightKg) &&
     numClose(a.profile.heightCm, b.profile.heightCm) &&
@@ -108,29 +135,36 @@ function applyServerRow(
     gender: string | null;
     locale: string;
     weight_unit: string;
+    mobile_font_size_mode?: string | null;
   },
   setters: {
     setLocaleState: (l: Locale) => void;
     setWeightUnitState: (w: WeightUnit) => void;
+    setMobileFontSizeModeState: (m: MobileFontSizeMode) => void;
     setProfileState: (p: UserProfile) => void;
     profileRef: MutableRefObject<UserProfile>;
     localeRef: MutableRefObject<Locale>;
     weightUnitRef: MutableRefObject<WeightUnit>;
-  }
+    mobileFontSizeRef: MutableRefObject<MobileFontSizeMode>;
+  },
 ) {
   const next = rowToProfile(row);
   setters.setLocaleState(next.locale);
   setters.setWeightUnitState(next.weightUnit);
+  setters.setMobileFontSizeModeState(next.mobileFontSizeMode);
   setters.setProfileState(next.profile);
   setters.profileRef.current = next.profile;
   setters.localeRef.current = next.locale;
   setters.weightUnitRef.current = next.weightUnit;
+  setters.mobileFontSizeRef.current = next.mobileFontSizeMode;
 }
 
 export function AccountPreferencesProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [locale, setLocaleState] = useState<Locale>("en");
   const [weightUnit, setWeightUnitState] = useState<WeightUnit>("kg");
+  const [mobileFontSizeMode, setMobileFontSizeModeState] =
+    useState<MobileFontSizeMode>("standard");
   const [profile, setProfileState] = useState<UserProfile>(emptyProfile);
   const [profileLoading, setProfileLoading] = useState(true);
 
@@ -140,9 +174,11 @@ export function AccountPreferencesProvider({ children }: { children: ReactNode }
   const profileRef = useRef(profile);
   const localeRef = useRef(locale);
   const weightUnitRef = useRef(weightUnit);
+  const mobileFontSizeRef = useRef<MobileFontSizeMode>(mobileFontSizeMode);
   profileRef.current = profile;
   localeRef.current = locale;
   weightUnitRef.current = weightUnit;
+  mobileFontSizeRef.current = mobileFontSizeMode;
 
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isInitialProfileLoadRef = useRef(false);
@@ -152,7 +188,8 @@ export function AccountPreferencesProvider({ children }: { children: ReactNode }
       p: UserProfile,
       loc: Locale,
       wu: WeightUnit,
-      uid: string
+      mobileFont: MobileFontSizeMode,
+      uid: string,
     ) => {
       return upsertProfile(uid, {
         name: p.name,
@@ -161,9 +198,10 @@ export function AccountPreferencesProvider({ children }: { children: ReactNode }
         gender: p.gender,
         locale: loc,
         weight_unit: wu,
+        mobile_font_size_mode: mobileFont,
       });
     },
-    []
+    [],
   );
 
   const applyRow = useCallback(
@@ -171,13 +209,15 @@ export function AccountPreferencesProvider({ children }: { children: ReactNode }
       applyServerRow(row, {
         setLocaleState,
         setWeightUnitState,
+        setMobileFontSizeModeState,
         setProfileState,
         profileRef,
         localeRef,
         weightUnitRef,
+        mobileFontSizeRef,
       });
     },
-    []
+    [],
   );
 
   const flushProfileSave = useCallback(async () => {
@@ -191,12 +231,14 @@ export function AccountPreferencesProvider({ children }: { children: ReactNode }
       profile: { ...profileRef.current },
       locale: localeRef.current,
       weightUnit: weightUnitRef.current,
+      mobileFontSizeMode: mobileFontSizeRef.current,
     };
     const { error } = await persistSnapshot(
       sent.profile,
       sent.locale,
       sent.weightUnit,
-      uid
+      sent.mobileFontSizeMode,
+      uid,
     );
     if (error || userIdRef.current !== uid) return;
     const { data } = await fetchProfile(uid);
@@ -219,7 +261,8 @@ export function AccountPreferencesProvider({ children }: { children: ReactNode }
     const p = profileRef.current;
     const loc = localeRef.current;
     const wu = weightUnitRef.current;
-    const { error } = await persistSnapshot(p, loc, wu, uid);
+    const mf = mobileFontSizeRef.current;
+    const { error } = await persistSnapshot(p, loc, wu, mf, uid);
     if (error) {
       return {
         ok: false,
@@ -255,6 +298,7 @@ export function AccountPreferencesProvider({ children }: { children: ReactNode }
       profile: profileRef.current,
       locale: localeRef.current,
       weightUnit: weightUnitRef.current,
+      mobileFontSizeMode: mobileFontSizeRef.current,
     };
     if (!samePrefs(local, server)) {
       applyRow(data);
@@ -272,12 +316,14 @@ export function AccountPreferencesProvider({ children }: { children: ReactNode }
         profile: { ...profileRef.current },
         locale: localeRef.current,
         weightUnit: weightUnitRef.current,
+        mobileFontSizeMode: mobileFontSizeRef.current,
       };
       const { error } = await persistSnapshot(
         sent.profile,
         sent.locale,
         sent.weightUnit,
-        uid
+        sent.mobileFontSizeMode,
+        uid,
       );
       if (error || userIdRef.current !== uid) return;
       const { data } = await fetchProfile(uid);
@@ -286,6 +332,7 @@ export function AccountPreferencesProvider({ children }: { children: ReactNode }
         profile: profileRef.current,
         locale: localeRef.current,
         weightUnit: weightUnitRef.current,
+        mobileFontSizeMode: mobileFontSizeRef.current,
       };
       if (!samePrefs(sent, now)) return;
       applyRow(data);
@@ -304,6 +351,7 @@ export function AccountPreferencesProvider({ children }: { children: ReactNode }
     if (!user) {
       setLocaleState("en");
       setWeightUnitState("kg");
+      setMobileFontSizeModeState("standard");
       setProfileState(emptyProfile);
       setProfileLoading(false);
       return;
@@ -322,6 +370,7 @@ export function AccountPreferencesProvider({ children }: { children: ReactNode }
           gender: null,
           locale: "en",
           weight_unit: "kg",
+          mobile_font_size_mode: "standard",
         });
         const { data: row } = await fetchProfile(user.id);
         if (cancelled) return;
@@ -366,14 +415,15 @@ export function AccountPreferencesProvider({ children }: { children: ReactNode }
         profileRef.current,
         next,
         weightUnitRef.current,
-        uid
+        mobileFontSizeRef.current,
+        uid,
       );
       if (!error && userIdRef.current === uid) {
         const { data } = await fetchProfile(uid);
         if (data) applyRow(data);
       }
     },
-    [persistSnapshot, applyRow]
+    [persistSnapshot, applyRow],
   );
 
   const setWeightUnit = useCallback(
@@ -386,14 +436,36 @@ export function AccountPreferencesProvider({ children }: { children: ReactNode }
         profileRef.current,
         localeRef.current,
         next,
-        uid
+        mobileFontSizeRef.current,
+        uid,
       );
       if (!error && userIdRef.current === uid) {
         const { data } = await fetchProfile(uid);
         if (data) applyRow(data);
       }
     },
-    [persistSnapshot, applyRow]
+    [persistSnapshot, applyRow],
+  );
+
+  const setMobileFontSizeMode = useCallback(
+    async (mode: MobileFontSizeMode) => {
+      setMobileFontSizeModeState(mode);
+      mobileFontSizeRef.current = mode;
+      const uid = userIdRef.current;
+      if (!uid) return;
+      const { error } = await persistSnapshot(
+        profileRef.current,
+        localeRef.current,
+        weightUnitRef.current,
+        mode,
+        uid,
+      );
+      if (!error && userIdRef.current === uid) {
+        const { data } = await fetchProfile(uid);
+        if (data) applyRow(data);
+      }
+    },
+    [persistSnapshot, applyRow],
   );
 
   const setName = useCallback(
@@ -456,11 +528,21 @@ export function AccountPreferencesProvider({ children }: { children: ReactNode }
     document.documentElement.lang = locale;
   }, [locale]);
 
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.toggle(
+      "mobile-font-enlarged",
+      mobileFontSizeMode === "enlarged",
+    );
+  }, [mobileFontSizeMode]);
+
   const value: AccountPreferencesValue = {
     locale,
     setLocale,
     weightUnit,
     setWeightUnit,
+    mobileFontSizeMode,
+    setMobileFontSizeMode,
     profile,
     setName,
     setWeightKg,
@@ -498,6 +580,18 @@ export function useWeightUnit() {
   return {
     weightUnit: ctx.weightUnit,
     setWeightUnit: ctx.setWeightUnit,
+  };
+}
+
+export function useMobileFontSizeMode() {
+  const ctx = useContext(AccountPreferencesContext);
+  if (ctx === null)
+    throw new Error(
+      "useMobileFontSizeMode must be used within AccountPreferencesProvider",
+    );
+  return {
+    mobileFontSizeMode: ctx.mobileFontSizeMode,
+    setMobileFontSizeMode: ctx.setMobileFontSizeMode,
   };
 }
 

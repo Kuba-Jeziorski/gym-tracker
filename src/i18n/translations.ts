@@ -130,7 +130,8 @@ export const translations: Record<Locale, Record<string, string>> = {
     exercisePicker_favoritesOnlyDisabledHint:
       "Star exercises on the Exercises page to use this filter.",
     exerciseHistory_back: "Back to Library",
-    exerciseHistory_subtitle: "All sets you logged for this exercise, by workout date.",
+    exerciseHistory_subtitle:
+      "All sets you logged for this exercise, by workout date.",
     exerciseHistory_empty: "No sets logged for this exercise yet.",
     exerciseHistory_date: "Workout date",
     exerciseHistory_notFound: "Exercise not found",
@@ -177,7 +178,8 @@ export const translations: Record<Locale, Record<string, string>> = {
       "When the next panel opens, find the row of circular action buttons at the top and tap See more (Polish: Pokaż więcej).",
     install_chrome_step3:
       "In the second list of options, tap Add to Home Screen (Polish: Do ekranu głównego — square with a plus). Confirm to place the app shortcut on your home screen.",
-    install_chrome_figure1: "Chrome menu after opening actions next to the URL.",
+    install_chrome_figure1:
+      "Chrome menu after opening actions next to the URL.",
     install_chrome_figure2: "Expanded menu with Add to Home Screen.",
     user_title: "Profile",
     user_description: "Your personal info, stats, and personal bests.",
@@ -221,6 +223,9 @@ export const translations: Record<Locale, Record<string, string>> = {
     settings_weightUnit: "Weight unit",
     settings_weightHeading: "Weight",
     settings_weightPlaceholder: "0",
+    settings_mobileFontSizeHeading: "Font-size adjusting for mobile",
+    settings_mobileFontSizeStandard: "Standard",
+    settings_mobileFontSizeEnlarged: "Enlarged",
     settings_heightHeading: "Height",
     settings_heightPlaceholder: "0",
     settings_genderHeading: "Gender",
@@ -508,6 +513,10 @@ export const translations: Record<Locale, Record<string, string>> = {
     settings_weightUnit: "Jednostka masy",
     settings_weightHeading: "Waga",
     settings_weightPlaceholder: "0",
+    settings_mobileFontSizeHeading:
+      "Dopasowanie rozmiaru czcionki na telefonie",
+    settings_mobileFontSizeStandard: "Standardowy",
+    settings_mobileFontSizeEnlarged: "Powiększony",
     settings_heightHeading: "Wzrost",
     settings_heightPlaceholder: "0",
     settings_genderHeading: "Płeć",

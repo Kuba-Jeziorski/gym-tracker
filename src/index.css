@@ -60,6 +60,21 @@
     textarea {
       font-size: 16px !important;
     }
+
+    html.mobile-font-enlarged .text-xs,
+    html.mobile-font-enlarged .text-sm,
+    html.mobile-font-enlarged .text-base,
+    html.mobile-font-enlarged .text-\[10px\],
+    html.mobile-font-enlarged .text-\[11px\],
+    html.mobile-font-enlarged .text-\[12px\],
+    html.mobile-font-enlarged .text-\[13px\],
+    html.mobile-font-enlarged .text-\[14px\],
+    html.mobile-font-enlarged .text-\[15px\],
+    html.mobile-font-enlarged .text-\[16px\],
+    html.mobile-font-enlarged .text-\[17px\] {
+      font-size: 1.125rem !important;
+      line-height: 1.75rem !important;
+    }
   }
 }
 

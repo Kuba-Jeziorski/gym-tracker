@@ -8,6 +8,7 @@ export type ProfileRow = {
   gender: string | null;
   locale: string;
   weight_unit: string;
+  mobile_font_size_mode: string;
 };
 
 export type ProfileUpsert = {
@@ -17,6 +18,7 @@ export type ProfileUpsert = {
   gender?: string | null;
   locale?: string;
   weight_unit?: string;
+  mobile_font_size_mode?: string;
 };
 
 export async function fetchProfile(userId: string) {
