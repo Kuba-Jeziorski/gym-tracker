@@ -18,5 +18,6 @@ export type StoredWorkout = {
   completedAt: string
   templateId?: string | null
   templateName?: string | null
+  notes?: string
   exercises: StoredWorkoutExercise[]
 }

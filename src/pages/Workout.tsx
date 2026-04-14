@@ -249,6 +249,8 @@ export function Workout() {
   const { appendWorkout } = useCompletedWorkouts();
   const navigate = useNavigate();
   const [discardModalOpen, setDiscardModalOpen] = useState(false);
+  const [finishModalOpen, setFinishModalOpen] = useState(false);
+  const [finishNote, setFinishNote] = useState("");
   const [templateSaveModal, setTemplateSaveModal] = useState<{
     stored: StoredWorkout;
     exerciseUniqueNames: string[];
@@ -433,6 +435,7 @@ export function Workout() {
       completedAt: new Date().toISOString(),
       templateId: currentWorkout!.templateId ?? null,
       templateName: templateForSave?.name?.trim() || null,
+      notes: finishNote.trim(),
       exercises: data.exercises.map((ex) => {
         const mapped = (ex.sets ?? []).map((s) => ({
           weight: inputWeightToKg(s.weight ?? "", weightUnit),
@@ -464,6 +467,8 @@ export function Workout() {
       }
     }
     appendWorkout(stored);
+    setFinishModalOpen(false);
+    setFinishNote("");
     endWorkout();
     navigate(routes.workout, { state: { tab: "completed" } });
   });
@@ -504,6 +509,10 @@ export function Workout() {
   };
 
   const onDiscardClick = () => setDiscardModalOpen(true);
+  const onFinishClick = () => {
+    if (!canFinish) return;
+    setFinishModalOpen(true);
+  };
   const onDiscardConfirm = () => {
     setDiscardModalOpen(false);
     endWorkout();
@@ -910,7 +919,7 @@ export function Workout() {
       <footer className="shrink-0 flex gap-3 mt-4 pt-4 border-t border-brand-border">
         <button
           type="button"
-          onClick={onFinish}
+          onClick={onFinishClick}
           disabled={!canFinish}
           className={cn(
             "px-4 py-2 rounded-lg font-medium transition-colors duration-300",
@@ -982,6 +991,61 @@ export function Workout() {
           </div>
         )}
       </div>
+      {finishModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="workout-finish-modal-title"
+        >
+          <div
+            className="absolute inset-0 bg-black/60"
+            aria-hidden="true"
+            onClick={() => setFinishModalOpen(false)}
+          />
+          <div className="relative w-full max-w-md rounded-xl border border-brand-border bg-brand-bg-soft p-6 shadow-lg">
+            <h2
+              id="workout-finish-modal-title"
+              className="text-lg font-semibold text-brand-dark mb-2"
+            >
+              {t("workout_finishModalTitle")}
+            </h2>
+            <p className="text-brand-text-muted text-sm mb-4">
+              {t("workout_finishModalMessage")}
+            </p>
+            <label
+              htmlFor="workout-finish-note"
+              className="block text-sm font-medium text-brand-dark mb-1.5"
+            >
+              {t("workout_finishModalNoteLabel")}
+            </label>
+            <textarea
+              id="workout-finish-note"
+              value={finishNote}
+              onChange={(e) => setFinishNote(e.target.value)}
+              placeholder={t("workout_finishModalNotePlaceholder")}
+              rows={4}
+              className="w-full rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder"
+            />
+            <div className="flex justify-end gap-3 mt-4">
+              <button
+                type="button"
+                onClick={() => setFinishModalOpen(false)}
+                className="rounded-lg border border-brand-border px-4 py-2 text-sm font-medium text-brand-text hover:bg-brand-bg transition-colors"
+              >
+                {t("workoutEdit_cancel")}
+              </button>
+              <button
+                type="button"
+                onClick={onFinish}
+                className="rounded-lg px-4 py-2 text-sm font-medium bg-brand-primary text-brand-bg hover:bg-brand-primary-hover transition-colors"
+              >
+                {t("workout_finish")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <ConfirmModal
         open={discardModalOpen}
         title={t("workout_discardConfirmTitle")}

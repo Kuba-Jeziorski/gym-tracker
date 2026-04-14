@@ -48,7 +48,7 @@ export function CompletedWorkoutsProvider({ children }: { children: ReactNode })
         started_at: workout.startedAt,
         completed_at: workout.completedAt,
         exercises: workout.exercises ?? [],
-        notes: '',
+        notes: workout.notes ?? "",
       })
       if (error) throw error
     },
@@ -64,6 +64,7 @@ export function CompletedWorkoutsProvider({ children }: { children: ReactNode })
         started_at: workout.startedAt,
         completed_at: workout.completedAt,
         exercises: workout.exercises ?? [],
+        notes: workout.notes ?? "",
         updated_at: new Date().toISOString(),
       })
       if (error) throw error

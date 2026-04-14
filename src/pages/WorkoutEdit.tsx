@@ -50,6 +50,7 @@ type WorkoutExercise = {
 
 type WorkoutFormValues = {
   completedAt: string;
+  notes: string;
   exercises: WorkoutExercise[];
 };
 
@@ -174,7 +175,7 @@ export function WorkoutEdit() {
 
   const { control, register, watch, handleSubmit, setValue, reset } =
     useForm<WorkoutFormValues>({
-      defaultValues: { completedAt: "", exercises: [] },
+      defaultValues: { completedAt: "", notes: "", exercises: [] },
     });
 
   function mergeRegisterWithViewportClamping(field: UseFormRegisterReturn) {
@@ -228,6 +229,7 @@ export function WorkoutEdit() {
     }
     reset({
       completedAt: toDatetimeLocalValue(workout.completedAt),
+      notes: workout.notes ?? "",
       exercises: formExercises,
     });
   }, [workout, weightUnit, reset]);
@@ -257,6 +259,7 @@ export function WorkoutEdit() {
       ...workout,
       startedAt,
       completedAt,
+      notes: data.notes?.trim() ?? "",
       exercises: data.exercises.map((ex) => {
         const mapped = (ex.sets ?? []).map((s) => ({
           weight: inputWeightToKg(s.weight ?? "", weightUnit),
@@ -343,6 +346,21 @@ export function WorkoutEdit() {
             <p className="text-brand-text-muted text-xs mt-1.5">
               {t("workoutEdit_completedAtHint")}
             </p>
+          </div>
+          <div>
+            <label
+              htmlFor="workout-edit-note"
+              className="block text-sm font-medium text-brand-dark mb-1.5"
+            >
+              {t("workoutDetail_note")}
+            </label>
+            <textarea
+              id="workout-edit-note"
+              rows={4}
+              {...mergeRegisterWithViewportClamping(register("notes"))}
+              placeholder={t("workout_finishModalNotePlaceholder")}
+              className="w-full rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder"
+            />
           </div>
 
           <div className="flex flex-col gap-1">

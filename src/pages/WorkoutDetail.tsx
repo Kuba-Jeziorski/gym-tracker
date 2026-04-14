@@ -291,6 +291,14 @@ export function WorkoutDetail() {
         variant="danger"
       />
       <div className="grid grid-cols-1 gap-4">
+        <div className="rounded-lg border border-brand-border bg-brand-bg p-4">
+          <h2 className="text-base font-medium text-brand-dark mb-2">
+            {t("workoutDetail_note")}
+          </h2>
+          <p className="text-sm text-brand-text whitespace-pre-wrap">
+            {workout.notes?.trim() ? workout.notes : t("workoutDetail_noteEmpty")}
+          </p>
+        </div>
         {workout.exercises
           .filter((ex) => ex.exerciseUniqueName || (ex.sets?.length ?? 0) > 0)
           .map((exercise, index) => (

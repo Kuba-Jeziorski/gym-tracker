@@ -47,6 +47,7 @@ export function toStoredWorkout(row: TrainingRow): StoredWorkout {
     completedAt: row.completed_at,
     templateId: row.template_id,
     templateName: row.template_name,
+    notes: row.notes ?? "",
     exercises: (Array.isArray(row.exercises) ? row.exercises : []) as StoredWorkout["exercises"],
   };
 }

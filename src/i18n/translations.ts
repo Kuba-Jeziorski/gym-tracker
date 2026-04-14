@@ -85,6 +85,11 @@ export const translations: Record<Locale, Record<string, string>> = {
     workout_templateSaveUpdate: "Finish and update template",
     workout_templateSaveNew: "Finish and create a new template",
     workout_templateSaveFinishOnly: "Just finish workout",
+    workout_finishModalTitle: "Finish workout",
+    workout_finishModalMessage:
+      "Add an optional note before finishing your workout.",
+    workout_finishModalNoteLabel: "Note (optional)",
+    workout_finishModalNotePlaceholder: "How did the workout go?",
     workout_templateCopy: "copy",
     history_title: "Training summary",
     history_description:
@@ -146,6 +151,8 @@ export const translations: Record<Locale, Record<string, string>> = {
       "Exercises, sets, results, and comments for this workout.",
     workoutDetail_started: "Started",
     workoutDetail_completed: "Completed",
+    workoutDetail_note: "Note",
+    workoutDetail_noteEmpty: "No note added.",
     workoutDetail_edit: "Edit",
     workoutDetail_remove: "Remove",
     workoutDetail_removeConfirmTitle: "Remove workout",
@@ -362,6 +369,11 @@ export const translations: Record<Locale, Record<string, string>> = {
     workout_templateSaveUpdate: "Zakończ i zaktualizuj szablon",
     workout_templateSaveNew: "Zakończ i utwórz nowy szablon",
     workout_templateSaveFinishOnly: "Tylko zakończ trening",
+    workout_finishModalTitle: "Zakończ trening",
+    workout_finishModalMessage:
+      "Dodaj opcjonalną notatkę przed zakończeniem treningu.",
+    workout_finishModalNoteLabel: "Notatka (opcjonalnie)",
+    workout_finishModalNotePlaceholder: "Jak poszedł trening?",
     workout_templateCopy: "kopia",
     history_title: "Podsumowanie treningów",
     history_description:
@@ -424,6 +436,8 @@ export const translations: Record<Locale, Record<string, string>> = {
       "Ćwiczenia, serie, wyniki i komentarze do tego treningu.",
     workoutDetail_started: "Rozpoczęto",
     workoutDetail_completed: "Zakończono",
+    workoutDetail_note: "Notatka",
+    workoutDetail_noteEmpty: "Brak notatki.",
     workoutDetail_edit: "Edytuj",
     workoutDetail_remove: "Usuń",
     workoutDetail_removeConfirmTitle: "Usuń trening",
