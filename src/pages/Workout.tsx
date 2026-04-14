@@ -246,6 +246,9 @@ export function Workout() {
     exerciseIndex: number;
     setIndex: number;
   } | null>(null);
+  const [removeExerciseTarget, setRemoveExerciseTarget] = useState<number | null>(
+    null,
+  );
   const { appendWorkout } = useCompletedWorkouts();
   const navigate = useNavigate();
   const [discardModalOpen, setDiscardModalOpen] = useState(false);
@@ -633,10 +636,10 @@ export function Workout() {
                   key={field.id}
                   className="rounded-lg border border-brand-border bg-brand-bg p-4 space-y-3 list-none"
                 >
-                  <div className="flex justify-start -mt-0.5">
+                  <div className="flex justify-end -mt-0.5">
                     <button
                       type="button"
-                      onClick={() => removeExercise(index)}
+                      onClick={() => setRemoveExerciseTarget(index)}
                       className="text-sm text-brand-text-muted hover:text-red-400 transition-colors"
                     >
                       {t("workout_removeExercise")}
@@ -671,7 +674,7 @@ export function Workout() {
                             "xs:rounded-lg xs:border xs:border-brand-border xs:bg-brand-bg xs:p-3",
                           )}
                         >
-                          <div className="flex justify-start mb-1.5">
+                          <div className="flex justify-end mb-1.5">
                             <button
                               type="button"
                               onClick={() =>
@@ -817,7 +820,7 @@ export function Workout() {
                           </div>
                         </div>
                       ))}
-                      <div className="flex flex-wrap items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2 max-[479px]:flex-nowrap max-[479px]:justify-between">
                         <button
                           type="button"
                           disabled={
@@ -838,7 +841,7 @@ export function Workout() {
                             setValue("exercises", updated);
                           }}
                           className={cn(
-                            "text-sm rounded px-2 py-1 border transition-colors",
+                            "text-sm rounded px-2 py-1 border transition-colors max-[479px]:w-full",
                             canAddSet(
                               allExercises,
                               sets as SetValues[],
@@ -876,7 +879,7 @@ export function Workout() {
                             setValue("exercises", updated);
                           }}
                           className={cn(
-                            "text-sm rounded px-2 py-1 border transition-colors",
+                            "text-sm rounded px-2 py-1 border transition-colors max-[479px]:w-full",
                             canAddSet(
                               allExercises,
                               sets as SetValues[],
@@ -916,13 +919,13 @@ export function Workout() {
         </p>
       )}
 
-      <footer className="shrink-0 flex gap-3 mt-4 pt-4 border-t border-brand-border">
+      <footer className="shrink-0 flex gap-3 mt-4 pt-4 border-t border-brand-border max-[479px]:flex-nowrap max-[479px]:justify-between">
         <button
           type="button"
           onClick={onFinishClick}
           disabled={!canFinish}
           className={cn(
-            "px-4 py-2 rounded-lg font-medium transition-colors duration-300",
+            "px-4 py-2 rounded-lg font-medium transition-colors duration-300 max-[479px]:w-full",
             canFinish
               ? "bg-brand-primary text-brand-bg hover:bg-brand-primary-hover"
               : "bg-brand-code-bg text-brand-text-muted cursor-not-allowed",
@@ -933,7 +936,7 @@ export function Workout() {
         <button
           type="button"
           onClick={onDiscardClick}
-          className="px-4 py-2 rounded-lg border border-brand-border text-brand-text hover:bg-brand-bg-soft transition-colors duration-300"
+          className="px-4 py-2 rounded-lg border border-brand-border text-brand-text hover:bg-brand-bg-soft transition-colors duration-300 max-[479px]:w-full"
         >
           {t("workout_discard")}
         </button>
@@ -1054,6 +1057,20 @@ export function Workout() {
         cancelLabel={t("common_no")}
         onConfirm={onDiscardConfirm}
         onCancel={onDiscardCancel}
+        variant="danger"
+      />
+      <ConfirmModal
+        open={removeExerciseTarget !== null}
+        title={t("workout_removeExerciseConfirmTitle")}
+        message={t("workout_removeExerciseConfirmMessage")}
+        confirmLabel={t("common_yes")}
+        cancelLabel={t("common_no")}
+        onConfirm={() => {
+          if (removeExerciseTarget === null) return;
+          removeExercise(removeExerciseTarget);
+          setRemoveExerciseTarget(null);
+        }}
+        onCancel={() => setRemoveExerciseTarget(null)}
         variant="danger"
       />
       <ConfirmModal
