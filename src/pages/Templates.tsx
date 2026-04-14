@@ -317,11 +317,6 @@ export function Templates() {
           {t("templates_empty")}
         </p>
       ) : (
-<<<<<<< Updated upstream
-        <div className="min-w-0 flex flex-col pb-1">
-          <ul className={cn("list-none m-0 p-0 space-y-2 min-w-0 pr-3")}>
-            {templates.map((template) => (
-=======
         <div className="flex-1 min-h-0 min-w-0 flex flex-col">
           <ul
             className={cn(
@@ -329,7 +324,6 @@ export function Templates() {
             )}
           >
             {sortedTemplates.map((template) => (
->>>>>>> Stashed changes
               <li
                 key={template.id}
                 className={cn(
