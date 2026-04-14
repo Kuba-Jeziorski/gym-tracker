@@ -295,11 +295,10 @@ export function Dashboard() {
                   workout={workout}
                   allExercises={allExercises}
                   templateName={
-                    workout.templateName?.trim() ||
                     (workout.templateId
                       ? templates.find((tmpl) => tmpl.id === workout.templateId)
                           ?.name
-                      : undefined)
+                      : undefined) || workout.templateName?.trim()
                   }
                   t={t}
                 />

@@ -14,6 +14,7 @@ import {
   toWorkoutTemplate,
   updateTemplateById,
 } from "../services/templatesDb";
+import { updateTrainingTemplateNameByTemplateId } from "../services/trainingsDb";
 
 type WorkoutTemplatesContextValue = {
   templates: WorkoutTemplate[];
@@ -97,9 +98,17 @@ export function WorkoutTemplatesProvider({ children }: { children: ReactNode }) 
         updated_at: new Date().toISOString(),
       });
       if (error) throw error;
+      const { error: trainingsUpdateError } =
+        await updateTrainingTemplateNameByTemplateId(
+          userId,
+          id,
+          template.name.trim(),
+        );
+      if (trainingsUpdateError) throw trainingsUpdateError;
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["templates", userId] });
+      await queryClient.invalidateQueries({ queryKey: ["trainings", userId] });
     },
   });
 

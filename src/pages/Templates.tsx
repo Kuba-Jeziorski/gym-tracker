@@ -68,6 +68,14 @@ export function Templates() {
     [pickerOptions, fullOptions, selectedUniqueNames],
   );
 
+  const sortedTemplates = useMemo(
+    () =>
+      [...templates].sort((a, b) =>
+        a.name.localeCompare(b.name, undefined, { sensitivity: "base" }),
+      ),
+    [templates],
+  );
+
   const selectedOptions = selectedUniqueNames
     .map((value) => options.find((o) => o.value === value))
     .filter((o): o is Option => o != null);
@@ -309,9 +317,19 @@ export function Templates() {
           {t("templates_empty")}
         </p>
       ) : (
+<<<<<<< Updated upstream
         <div className="min-w-0 flex flex-col pb-1">
           <ul className={cn("list-none m-0 p-0 space-y-2 min-w-0 pr-3")}>
             {templates.map((template) => (
+=======
+        <div className="flex-1 min-h-0 min-w-0 flex flex-col">
+          <ul
+            className={cn(
+              "list-none m-0 p-0 space-y-2 flex-1 min-h-0 overflow-y-auto min-w-0 pr-3",
+            )}
+          >
+            {sortedTemplates.map((template) => (
+>>>>>>> Stashed changes
               <li
                 key={template.id}
                 className={cn(

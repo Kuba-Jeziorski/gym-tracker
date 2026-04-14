@@ -237,10 +237,9 @@ export function WorkoutDetail() {
   const startedLine = `${t("workoutDetail_started")} - ${formatDMY(startedDate)}, ${formatHMS(startedDate)}`;
   const completedLine = `${t("workoutDetail_completed")} - ${formatDMY(completedDate)}, ${formatHMS(completedDate)}`;
   const templateName =
-    workout.templateName?.trim() ||
     (workout.templateId
       ? templates.find((tmpl) => tmpl.id === workout.templateId)?.name
-      : "");
+      : "") || workout.templateName?.trim();
 
   return (
     <div>

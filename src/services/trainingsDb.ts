@@ -84,6 +84,21 @@ export async function updateTrainingById(
     .eq("id", id);
 }
 
+export async function updateTrainingTemplateNameByTemplateId(
+  userId: string,
+  templateId: string,
+  templateName: string,
+) {
+  return supabase
+    .from("trainings")
+    .update({
+      template_name: templateName,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("user_id", userId)
+    .eq("template_id", templateId);
+}
+
 export async function deleteTrainingById(userId: string, id: string) {
   return supabase.from("trainings").delete().eq("user_id", userId).eq("id", id);
 }

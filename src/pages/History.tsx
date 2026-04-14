@@ -217,12 +217,7 @@ export function History() {
   const filtered = useMemo(() => {
     if (!filterTemplateId && !filterTemplateName) return sorted;
     if (filterTemplateId) {
-      return sorted.filter(
-        (w) =>
-          w.templateId === filterTemplateId ||
-          (resolvedTemplateName &&
-            w.templateName?.trim() === resolvedTemplateName),
-      );
+      return sorted.filter((w) => w.templateId === filterTemplateId);
     }
     return sorted.filter(
       (w) => w.templateName?.trim() === (filterTemplateName ?? resolvedTemplateName),
@@ -282,12 +277,11 @@ export function History() {
                             workout={workout}
                             allExercises={allExercises}
                             templateName={
-                              workout.templateName?.trim() ||
                               (workout.templateId
                                 ? templates.find(
                                     (tmpl) => tmpl.id === workout.templateId,
                                   )?.name
-                                : undefined)
+                                : undefined) || workout.templateName?.trim()
                             }
                             t={t}
                           />
