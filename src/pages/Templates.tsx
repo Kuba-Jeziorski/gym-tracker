@@ -16,8 +16,44 @@ import {
   filterExerciseOptionsForPicker,
   mergeExerciseOptionsWithValues,
 } from "../helpers/exerciseSelectOptions";
+import {
+  clearCustomTemplateDraft,
+  readCustomTemplateDraft,
+  upsertCustomTemplateDraft,
+} from "../helpers/customTemplateDraftStorage";
 
 type Option = { value: string; label: string };
+
+function readInitialTemplateFormState(): {
+  templateName: string;
+  selectedUniqueNames: string[];
+  formOpen: boolean;
+  editTarget: WorkoutTemplate | null;
+} {
+  const empty = {
+    templateName: "",
+    selectedUniqueNames: [] as string[],
+    formOpen: false,
+    editTarget: null as WorkoutTemplate | null,
+  };
+  if (typeof window === "undefined") return empty;
+  const draft = readCustomTemplateDraft();
+  if (!draft) return empty;
+  const editTarget =
+    draft.mode === "edit" && draft.editTemplateId
+      ? {
+          id: draft.editTemplateId,
+          name: draft.templateName,
+          exerciseUniqueNames: [...draft.selectedUniqueNames],
+        }
+      : null;
+  return {
+    templateName: draft.templateName,
+    selectedUniqueNames: draft.selectedUniqueNames,
+    formOpen: draft.formOpen,
+    editTarget,
+  };
+}
 
 export function Templates() {
   const { t } = useLanguage();
@@ -32,16 +68,48 @@ export function Templates() {
     removeTemplate,
     isTemplateNameTaken,
   } = useWorkoutTemplates();
-  const [templateName, setTemplateName] = useState("");
-  const [selectedUniqueNames, setSelectedUniqueNames] = useState<string[]>([]);
-  const [editTarget, setEditTarget] = useState<WorkoutTemplate | null>(null);
+  const initialFormRef = useRef<ReturnType<typeof readInitialTemplateFormState> | null>(
+    null,
+  );
+  if (initialFormRef.current === null) {
+    initialFormRef.current = readInitialTemplateFormState();
+  }
+  const initialForm = initialFormRef.current;
+  const [templateName, setTemplateName] = useState(initialForm.templateName);
+  const [selectedUniqueNames, setSelectedUniqueNames] = useState(
+    initialForm.selectedUniqueNames,
+  );
+  const [editTarget, setEditTarget] = useState<WorkoutTemplate | null>(
+    initialForm.editTarget,
+  );
   const [removeTarget, setRemoveTarget] = useState<string | null>(null);
-  const [formOpen, setFormOpen] = useState(false);
+  const [formOpen, setFormOpen] = useState(initialForm.formOpen);
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     if (editTarget) setFormOpen(true);
   }, [editTarget]);
+
+  useEffect(() => {
+    const active = formOpen || editTarget !== null;
+    if (!active) {
+      clearCustomTemplateDraft();
+      return;
+    }
+    const hasProgress =
+      templateName.trim().length > 0 || selectedUniqueNames.length > 0;
+    if (!hasProgress) {
+      clearCustomTemplateDraft();
+      return;
+    }
+    upsertCustomTemplateDraft({
+      formOpen,
+      mode: editTarget ? "edit" : "create",
+      editTemplateId: editTarget?.id ?? null,
+      templateName,
+      selectedUniqueNames,
+    });
+  }, [templateName, selectedUniqueNames, formOpen, editTarget]);
 
   const fullOptions = useMemo(
     () => buildSortedExerciseSelectOptions(allExercises, t),
@@ -105,6 +173,7 @@ export function Templates() {
     setSelectedUniqueNames([]);
     setEditTarget(null);
     setFormOpen(false);
+    clearCustomTemplateDraft();
   }, []);
 
   const handleRemoveExercise = useCallback((uniqueName: string) => {

@@ -523,10 +523,14 @@ export function Workout() {
   const onDiscardCancel = () => setDiscardModalOpen(false);
 
   if (!currentWorkout) {
-    const templateOptions = templates.map((tmpl) => ({
-      value: tmpl.id,
-      label: tmpl.name,
-    }));
+    const templateOptions = [...templates]
+      .sort((a, b) =>
+        a.name.localeCompare(b.name, undefined, { sensitivity: "base" }),
+      )
+      .map((tmpl) => ({
+        value: tmpl.id,
+        label: tmpl.name,
+      }));
     const handleStartWithTemplate = () => {
       const template = templates.find((tmpl) => tmpl.id === selectedTemplateId);
       if (template) {
