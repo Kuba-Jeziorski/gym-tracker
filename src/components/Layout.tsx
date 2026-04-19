@@ -2,6 +2,7 @@ import { Outlet, NavLink, useLocation } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import {
   LayoutDashboard,
+  ChartColumn,
   Dumbbell,
   ListPlus,
   Download,
@@ -20,6 +21,7 @@ import { cn } from "../lib/utils";
 
 const navIcons: Record<string, typeof LayoutDashboard> = {
   [routes.dashboard]: LayoutDashboard,
+  [routes.summary]: ChartColumn,
   [routes.workout]: Dumbbell,
   [routes.library]: ListPlus,
   [routes.install]: Download,

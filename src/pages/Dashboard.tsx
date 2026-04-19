@@ -13,8 +13,6 @@ import {
   computePersonalBests,
   countTotalSets,
   getWorkoutsThisCalendarWeek,
-  getWorkoutsThisCalendarMonth,
-  getCurrentStreakWeeks,
   formatPBDate,
   formatTimeSeconds,
 } from "../helpers/workoutStats";
@@ -191,13 +189,9 @@ export function Dashboard() {
 
   const stats = useMemo(() => {
     const thisWeek = getWorkoutsThisCalendarWeek(workouts);
-    const thisMonth = getWorkoutsThisCalendarMonth(workouts);
     return {
-      trainingsCompleted: workouts.length,
-      totalSets: countTotalSets(workouts),
       workoutsThisWeek: thisWeek.length,
-      workoutsThisMonth: thisMonth.length,
-      currentStreakWeeks: getCurrentStreakWeeks(workouts),
+      setsThisWeek: countTotalSets(thisWeek),
     };
   }, [workouts]);
 
@@ -324,48 +318,32 @@ export function Dashboard() {
         {isLoading ? (
           <p className="text-brand-text-muted text-sm">{t("loading")}</p>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-            <div className="rounded-xl border border-brand-border bg-brand-bg-soft p-4">
-              <p className="text-2xl font-semibold text-brand-dark">
-                {stats.trainingsCompleted}
-              </p>
-              <p className="text-sm text-brand-text-muted">
-                {t("user_stat_trainingsCompleted")}
-              </p>
-            </div>
-            <div className="rounded-xl border border-brand-border bg-brand-bg-soft p-4">
-              <p className="text-2xl font-semibold text-brand-dark">
-                {stats.totalSets}
-              </p>
-              <p className="text-sm text-brand-text-muted">
-                {t("user_stat_totalSets")}
-              </p>
-            </div>
+          <div className="grid gap-3 sm:grid-cols-2">
             <div className="rounded-xl border border-brand-border bg-brand-bg-soft p-4">
               <p className="text-2xl font-semibold text-brand-dark">
                 {stats.workoutsThisWeek}
               </p>
               <p className="text-sm text-brand-text-muted">
-                {t("user_stat_workoutsThisWeek")}
+                {t("dashboard_stat_trainingsThisWeek")}
               </p>
             </div>
             <div className="rounded-xl border border-brand-border bg-brand-bg-soft p-4">
               <p className="text-2xl font-semibold text-brand-dark">
-                {stats.workoutsThisMonth}
+                {stats.setsThisWeek}
               </p>
               <p className="text-sm text-brand-text-muted">
-                {t("user_stat_workoutsThisMonth")}
-              </p>
-            </div>
-            <div className="rounded-xl border border-brand-border bg-brand-bg-soft p-4">
-              <p className="text-2xl font-semibold text-brand-dark">
-                {stats.currentStreakWeeks}
-              </p>
-              <p className="text-sm text-brand-text-muted">
-                {t("user_stat_streakWeeks")}
+                {t("dashboard_stat_setsThisWeek")}
               </p>
             </div>
           </div>
+        )}
+        {!isLoading && workouts.length > 0 && (
+          <Link
+            to={routes.summary}
+            className="mt-3 inline-block text-sm font-medium text-brand-accent hover:text-brand-primary-hover transition-colors"
+          >
+            {t("dashboard_viewAll")} →
+          </Link>
         )}
       </section>
 

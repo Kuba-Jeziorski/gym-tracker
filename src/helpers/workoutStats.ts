@@ -100,6 +100,30 @@ export function countTotalSets(workouts: StoredWorkout[]): number {
   return n
 }
 
+/** Sum of weight (kg) × reps for every set where both values are valid and positive. */
+export function sumWorkoutsVolumeKg(workouts: StoredWorkout[]): number {
+  let total = 0
+  for (const w of workouts) {
+    for (const ex of w.exercises) {
+      for (const set of ex.sets ?? []) {
+        const wStr = set.weight?.trim()
+        const weightKg = wStr ? parseFloat(wStr) : NaN
+        const repsStr = set.reps?.trim()
+        const reps = repsStr ? parseInt(repsStr, 10) : NaN
+        if (
+          Number.isFinite(weightKg) &&
+          weightKg > 0 &&
+          Number.isFinite(reps) &&
+          reps > 0
+        ) {
+          total += weightKg * reps
+        }
+      }
+    }
+  }
+  return total
+}
+
 /** Monday 00:00:00.000 local time for the calendar week containing `d`. */
 function startOfWeekMonday(d: Date): Date {
   const mon = new Date(d)
@@ -140,6 +164,63 @@ export function getWorkoutsThisCalendarMonth(workouts: StoredWorkout[]): StoredW
     const t = new Date(w.completedAt).getTime()
     return t >= startMs && t < endMs
   })
+}
+
+export type WorkoutsWeekGroup = {
+  weekStartMonday: Date
+  workouts: StoredWorkout[]
+}
+
+/** Calendar weeks (Mon start), newest first. */
+export function groupWorkoutsByCalendarWeekDescending(
+  workouts: StoredWorkout[],
+): WorkoutsWeekGroup[] {
+  const map = new Map<number, StoredWorkout[]>()
+  for (const w of workouts) {
+    const d = new Date(w.completedAt)
+    const mon = startOfWeekMonday(d)
+    const key = mon.getTime()
+    const list = map.get(key) ?? []
+    list.push(w)
+    map.set(key, list)
+  }
+  return Array.from(map.entries())
+    .sort((a, b) => b[0] - a[0])
+    .map(([ms, arr]) => ({
+      weekStartMonday: new Date(ms),
+      workouts: arr,
+    }))
+}
+
+export type WorkoutsMonthGroup = {
+  year: number
+  monthIndex: number
+  workouts: StoredWorkout[]
+}
+
+/** Calendar months (local), newest first. */
+export function groupWorkoutsByCalendarMonthDescending(
+  workouts: StoredWorkout[],
+): WorkoutsMonthGroup[] {
+  const map = new Map<string, StoredWorkout[]>()
+  for (const w of workouts) {
+    const d = new Date(w.completedAt)
+    const key = `${d.getFullYear()}-${d.getMonth()}`
+    const list = map.get(key) ?? []
+    list.push(w)
+    map.set(key, list)
+  }
+  return Array.from(map.entries())
+    .sort((a, b) => {
+      const [ya, ma] = a[0].split('-').map(Number)
+      const [yb, mb] = b[0].split('-').map(Number)
+      if (ya !== yb) return yb - ya
+      return mb - ma
+    })
+    .map(([k, arr]) => {
+      const [y, m] = k.split('-').map(Number)
+      return { year: y, monthIndex: m, workouts: arr }
+    })
 }
 
 export function getCurrentStreakWeeks(workouts: StoredWorkout[]): number {

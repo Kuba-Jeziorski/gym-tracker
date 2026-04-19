@@ -1,6 +1,7 @@
 export const routes = {
   auth: '/login',
   dashboard: '/',
+  summary: '/summary',
   workout: '/workout',
   history: '/history',
   workoutDetail: (id: string) => `/history/${id}`,
