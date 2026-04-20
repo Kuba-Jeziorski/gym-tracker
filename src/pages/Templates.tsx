@@ -84,11 +84,24 @@ export function Templates() {
   );
   const [removeTarget, setRemoveTarget] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(initialForm.formOpen);
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     if (editTarget) setFormOpen(true);
   }, [editTarget]);
+
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 639px)");
+    const updateViewportFlag = () => {
+      setIsMobileViewport(media.matches);
+    };
+    updateViewportFlag();
+    media.addEventListener("change", updateViewportFlag);
+    return () => {
+      media.removeEventListener("change", updateViewportFlag);
+    };
+  }, []);
 
   useEffect(() => {
     const active = formOpen || editTarget !== null;
@@ -342,9 +355,12 @@ export function Templates() {
                 classNamePrefix="gym-select"
                 className="min-w-0"
                 menuPortalTarget={
-                  typeof document !== "undefined" ? document.body : null
+                  !isMobileViewport && typeof document !== "undefined"
+                    ? document.body
+                    : null
                 }
-                menuPosition="fixed"
+                menuPosition={isMobileViewport ? "absolute" : "fixed"}
+                menuPlacement="bottom"
               />
             </div>
             {selectedExerciseItems.length > 0 && (
