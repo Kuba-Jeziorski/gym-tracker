@@ -94,6 +94,33 @@
     text-overflow: ellipsis;
   }
 
+  @media (max-width: 639px) {
+    .gym-select__control {
+      height: auto !important;
+      min-height: 42px !important;
+      align-items: flex-start !important;
+      padding-top: 6px !important;
+      padding-bottom: 6px !important;
+    }
+
+    .gym-select__value-container {
+      max-height: none !important;
+      align-items: flex-start !important;
+    }
+
+    .gym-select__single-value,
+    .gym-select__placeholder,
+    .gym-select__option {
+      white-space: normal !important;
+      line-height: 1.25rem !important;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
+
   .scroll-fade-bottom {
     position: relative;
   }

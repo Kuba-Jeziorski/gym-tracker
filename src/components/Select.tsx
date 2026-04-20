@@ -25,6 +25,7 @@ export const selectStyles = {
   singleValue: (base: Record<string, unknown>) => ({
     ...base,
     color: "var(--brand-text)",
+    whiteSpace: "normal" as const,
   }),
   input: (base: Record<string, unknown>) => ({
     ...base,
@@ -33,6 +34,7 @@ export const selectStyles = {
   placeholder: (base: Record<string, unknown>) => ({
     ...base,
     color: "var(--brand-text-muted)",
+    whiteSpace: "normal" as const,
   }),
   menu: (base: Record<string, unknown>) => ({
     ...base,
@@ -58,6 +60,7 @@ export const selectStyles = {
         : "transparent",
     color: state.isSelected ? "var(--brand-primary)" : "var(--brand-text)",
     cursor: "pointer",
+    whiteSpace: "normal" as const,
   }),
 };
 
