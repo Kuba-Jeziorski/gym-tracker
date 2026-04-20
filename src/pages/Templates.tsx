@@ -368,40 +368,42 @@ export function Templates() {
                 {selectedExerciseItems.map((item, index) => (
                   <li
                     key={item.uniqueName}
-                    className="flex items-center justify-between gap-3 rounded-lg border border-brand-border bg-brand-bg px-3 py-2"
+                    className="rounded-lg border border-brand-border bg-brand-bg px-3 py-2"
                   >
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-brand-text">
+                      <p className="text-sm font-medium text-brand-text whitespace-normal break-words">
                         {index + 1}. {item.label}
                       </p>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => moveExercise(index, index - 1)}
-                        disabled={index === 0}
-                        className={cn(
-                          "text-xs rounded border px-2 py-1 transition-colors",
-                          index === 0
-                            ? "border-brand-border bg-brand-code-bg text-brand-text-muted cursor-not-allowed"
-                            : "border-brand-border text-brand-text-muted hover:bg-brand-bg-soft",
-                        )}
-                      >
-                        {t("templates_moveUp")}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => moveExercise(index, index + 1)}
-                        disabled={index === selectedExerciseItems.length - 1}
-                        className={cn(
-                          "text-xs rounded border px-2 py-1 transition-colors",
-                          index === selectedExerciseItems.length - 1
-                            ? "border-brand-border bg-brand-code-bg text-brand-text-muted cursor-not-allowed"
-                            : "border-brand-border text-brand-text-muted hover:bg-brand-bg-soft",
-                        )}
-                      >
-                        {t("templates_moveDown")}
-                      </button>
+                    <div className="mt-2 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => moveExercise(index, index - 1)}
+                          disabled={index === 0}
+                          className={cn(
+                            "text-xs rounded border px-2 py-1 transition-colors",
+                            index === 0
+                              ? "border-brand-border bg-brand-code-bg text-brand-text-muted cursor-not-allowed"
+                              : "border-brand-border text-brand-text-muted hover:bg-brand-bg-soft",
+                          )}
+                        >
+                          {t("templates_moveUp")}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => moveExercise(index, index + 1)}
+                          disabled={index === selectedExerciseItems.length - 1}
+                          className={cn(
+                            "text-xs rounded border px-2 py-1 transition-colors",
+                            index === selectedExerciseItems.length - 1
+                              ? "border-brand-border bg-brand-code-bg text-brand-text-muted cursor-not-allowed"
+                              : "border-brand-border text-brand-text-muted hover:bg-brand-bg-soft",
+                          )}
+                        >
+                          {t("templates_moveDown")}
+                        </button>
+                      </div>
                       <button
                         type="button"
                         onClick={() => handleRemoveExercise(item.uniqueName)}
