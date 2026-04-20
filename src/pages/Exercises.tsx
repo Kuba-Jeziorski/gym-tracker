@@ -5,6 +5,7 @@ import { useLanguage } from "../contexts/LanguageContext";
 import { routes } from "../routes";
 import { useCustomExercises } from "../contexts/CustomExercisesContext";
 import { useFavoriteExercises } from "../contexts/FavoriteExercisesContext";
+import { useExerciseNotes } from "../contexts/ExerciseNotesContext";
 import type { Exercise } from "../data/exercises";
 import { MUSCLE_GROUPS } from "../data/exercises";
 import { ConfirmModal } from "../components/ConfirmModal";
@@ -42,6 +43,7 @@ export function Exercises() {
     removeCustomExercise,
   } = useCustomExercises();
   const { isFavorite, toggleFavorite } = useFavoriteExercises();
+  const { notesByExerciseUniqueName, saveExerciseNote } = useExerciseNotes();
   const [formOpen, setFormOpen] = useState(false);
   const [name, setName] = useState("");
   const [weight, setWeight] = useState(false);
@@ -54,6 +56,7 @@ export function Exercises() {
   const [allMuscleGroups, setAllMuscleGroups] = useState<string[]>([]);
   const [editTarget, setEditTarget] = useState<Exercise | null>(null);
   const [removeTarget, setRemoveTarget] = useState<string | null>(null);
+  const [noteDraft, setNoteDraft] = useState("");
   const [atTop, setAtTop] = useState(true);
   const [atBottom, setAtBottom] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -98,6 +101,7 @@ export function Exercises() {
     setMainMuscleGroup("");
     setAllMuscleGroups([]);
     setEditTarget(null);
+    setNoteDraft("");
     setFormOpen(false);
   }, []);
 
@@ -112,28 +116,35 @@ export function Exercises() {
     setPace(Boolean(ex.pace));
     setMainMuscleGroup(ex.main_muscle_group ?? "");
     setAllMuscleGroups(ex.all_muscle_groups ?? []);
+    setNoteDraft(notesByExerciseUniqueName[ex.unique_name] ?? "");
     requestAnimationFrame(() =>
       formRef.current?.scrollIntoView({ behavior: "smooth" }),
     );
-  }, []);
+  }, [notesByExerciseUniqueName]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = name.trim();
-    if (!trimmed) return;
-    if (!weight && !reps && !time && !distance && !avgVelocity && !pace) return;
+    const isEditingCustomExercise = editTarget ? isCustom(editTarget) : false;
+    if (isEditingCustomExercise) {
+      if (!trimmed) return;
+      if (!weight && !reps && !time && !distance && !avgVelocity && !pace) return;
+    }
     if (editTarget) {
-      updateCustomExercise(editTarget.unique_name, {
-        name: trimmed,
-        weight,
-        reps,
-        time,
-        distance,
-        avgVelocity,
-        pace,
-        main_muscle_group: mainMuscleGroup.trim() || "",
-        all_muscle_groups: [...allMuscleGroups],
-      });
+      if (isEditingCustomExercise) {
+        updateCustomExercise(editTarget.unique_name, {
+          name: trimmed,
+          weight,
+          reps,
+          time,
+          distance,
+          avgVelocity,
+          pace,
+          main_muscle_group: mainMuscleGroup.trim() || "",
+          all_muscle_groups: [...allMuscleGroups],
+        });
+      }
+      await saveExerciseNote(editTarget.unique_name, noteDraft);
       resetForm();
     } else {
       addCustomExercise({
@@ -187,6 +198,11 @@ export function Exercises() {
         <h2 className="text-lg font-medium text-brand-dark mb-3">
           {editTarget ? t("exercises_editTitle") : t("exercises_add")}
         </h2>
+        {!editTarget || isCustom(editTarget) ? null : (
+          <p className="text-sm text-brand-text-muted">
+            {t("exerciseNote_modalDescription")}
+          </p>
+        )}
         <div className="flex flex-wrap items-end gap-4">
           <label className="flex flex-col gap-2">
             <span className="text-sm text-brand-text-muted">
@@ -197,6 +213,7 @@ export function Exercises() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder={t("exercises_namePlaceholder")}
+              disabled={Boolean(editTarget && !isCustom(editTarget))}
               className="rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder min-w-0 w-full sm:min-w-[16rem] sm:w-auto"
             />
           </label>
@@ -204,31 +221,37 @@ export function Exercises() {
             <Switch
               checked={weight}
               onChange={setWeight}
+              disabled={Boolean(editTarget && !isCustom(editTarget))}
               label={t("workout_weight")}
             />
             <Switch
               checked={reps}
               onChange={setReps}
+              disabled={Boolean(editTarget && !isCustom(editTarget))}
               label={t("workout_reps")}
             />
             <Switch
               checked={time}
               onChange={setTime}
+              disabled={Boolean(editTarget && !isCustom(editTarget))}
               label={t("workout_time")}
             />
             <Switch
               checked={distance}
               onChange={setDistance}
+              disabled={Boolean(editTarget && !isCustom(editTarget))}
               label={t("workout_distance")}
             />
             <Switch
               checked={avgVelocity}
               onChange={setAvgVelocity}
+              disabled={Boolean(editTarget && !isCustom(editTarget))}
               label={t("workout_avgVelocity")}
             />
             <Switch
               checked={pace}
               onChange={setPace}
+              disabled={Boolean(editTarget && !isCustom(editTarget))}
               label={t("workout_pace")}
             />
           </div>
@@ -266,6 +289,7 @@ export function Exercises() {
                     selected ? selected.map((o) => o.value) : [],
                   )
                 }
+                isDisabled={Boolean(editTarget && !isCustom(editTarget))}
                 options={muscleGroupOptions}
                 placeholder="—"
                 styles={selectStylesMulti}
@@ -279,28 +303,44 @@ export function Exercises() {
             </div>
           </label>
         </div>
+        {editTarget && (
+          <label className="flex flex-col gap-2">
+            <span className="text-sm text-brand-text-muted">
+              {t("exerciseNote_modalTitle")}
+            </span>
+            <textarea
+              value={noteDraft}
+              onChange={(e) => setNoteDraft(e.target.value)}
+              rows={4}
+              placeholder={t("exerciseNote_placeholder")}
+              className="w-full rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder"
+            />
+          </label>
+        )}
         <div className="">
           <div className="h-[42px] flex items-center gap-2">
             <button
               type="submit"
               disabled={
-                !name.trim() ||
-                (!weight &&
-                  !reps &&
-                  !time &&
-                  !distance &&
-                  !avgVelocity &&
-                  !pace)
+                !editTarget &&
+                (!name.trim() ||
+                  (!weight &&
+                    !reps &&
+                    !time &&
+                    !distance &&
+                    !avgVelocity &&
+                    !pace))
               }
               className={cn(
                 "rounded-lg border px-4 py-2 text-sm font-medium transition-colors",
-                name.trim() &&
-                  (weight ||
-                    reps ||
-                    time ||
-                    distance ||
-                    avgVelocity ||
-                    pace)
+                editTarget ||
+                  (name.trim() &&
+                    (weight ||
+                      reps ||
+                      time ||
+                      distance ||
+                      avgVelocity ||
+                      pace))
                   ? "border-transparent bg-brand-primary text-brand-bg hover:bg-brand-primary-hover"
                   : "border-brand-border bg-brand-code-bg text-brand-text-muted cursor-not-allowed",
               )}
@@ -407,19 +447,25 @@ export function Exercises() {
                       .filter(Boolean)
                       .join(" · ")}
                   </div>
+                  {(notesByExerciseUniqueName[ex.unique_name] ?? "").trim() && (
+                    <p className="text-sm text-brand-text-muted mt-2 whitespace-pre-wrap rounded-lg border border-brand-border bg-brand-bg px-2.5 py-2">
+                      {notesByExerciseUniqueName[ex.unique_name]}
+                    </p>
+                  )}
                 </div>
-                {isCustom(ex) && (
-                  <div className="flex gap-2 sm:items-center sm:justify-end">
-                    <button
-                      type="button"
-                      onClick={() => handleEdit(ex)}
-                      className={cn(
-                        "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                        "border border-brand-border text-brand-text-muted hover:bg-brand-bg-soft",
-                      )}
-                    >
-                      {t("exercises_edit")}
-                    </button>
+                <div className="flex gap-2 sm:items-center sm:justify-end">
+                  <button
+                    type="button"
+                    onClick={() => handleEdit(ex)}
+                    className={cn(
+                      "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                      "border border-brand-border text-brand-text-muted hover:bg-brand-bg-soft",
+                    )}
+                  >
+                    {t("exercises_edit")}
+                  </button>
+                  {isCustom(ex) && (
+                    <>
                     <button
                       type="button"
                       onClick={() => setRemoveTarget(ex.unique_name)}
@@ -430,8 +476,9 @@ export function Exercises() {
                     >
                       {t("workout_remove")}
                     </button>
-                  </div>
-                )}
+                    </>
+                  )}
+                </div>
               </li>
             ))}
           </ul>

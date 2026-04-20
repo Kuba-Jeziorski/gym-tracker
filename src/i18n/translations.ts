@@ -125,6 +125,11 @@ export const translations: Record<Locale, Record<string, string>> = {
     exercises_custom: "Custom",
     exercises_builtIn: "Built-in",
     exercises_nameLinkTitle: "View all logged sets for this exercise",
+    exerciseNote_edit: "Edit note",
+    exerciseNote_modalTitle: "Exercise note",
+    exerciseNote_modalDescription:
+      "Save a note for this exercise to remember substitutions or adjustments in future trainings.",
+    exerciseNote_placeholder: "e.g. Use machine instead of dumbbells",
     exercises_removeConfirmTitle: "Remove exercise",
     exercises_removeConfirmMessage:
       "Remove this custom exercise? It will no longer appear in the list.",
@@ -439,6 +444,11 @@ export const translations: Record<Locale, Record<string, string>> = {
     exercises_custom: "Własne",
     exercises_builtIn: "Wbudowane",
     exercises_nameLinkTitle: "Zobacz wszystkie zapisane serie tego ćwiczenia",
+    exerciseNote_edit: "Edytuj notatkę",
+    exerciseNote_modalTitle: "Notatka do ćwiczenia",
+    exerciseNote_modalDescription:
+      "Zapisz notatkę do tego ćwiczenia, aby pamiętać o zamiennikach lub modyfikacjach w kolejnych treningach.",
+    exerciseNote_placeholder: "np. Użyj maszyny zamiast hantli",
     exercises_removeConfirmTitle: "Usuń ćwiczenie",
     exercises_removeConfirmMessage:
       "Usunąć to własne ćwiczenie? Zniknie z listy.",

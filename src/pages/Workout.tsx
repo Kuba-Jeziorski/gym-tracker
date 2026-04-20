@@ -667,7 +667,6 @@ export function Workout() {
                       )}
                     />
                   </div>
-
                   {exercise && (
                     <div className="space-y-2">
                       {(sets as SetValues[]).map((_, setIndex) => (

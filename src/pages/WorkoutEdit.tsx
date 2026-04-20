@@ -6,6 +6,7 @@ import { useWeightUnit } from "../contexts/WeightUnitContext";
 import { useCompletedWorkouts } from "../contexts/CompletedWorkoutsContext";
 import { useAllExercises } from "../contexts/CustomExercisesContext";
 import { useFavoriteExercises } from "../contexts/FavoriteExercisesContext";
+import { useExerciseNotes } from "../contexts/ExerciseNotesContext";
 import type { StoredWorkout } from "../data/workoutStorage";
 import {
   storedKgToDisplay,
@@ -163,6 +164,7 @@ export function WorkoutEdit() {
 
   const workout = id ? workouts.find((w) => w.id === id) : null;
   const allExercises = useAllExercises();
+  const { notesByExerciseUniqueName } = useExerciseNotes();
   const {
     favoriteIdSet,
     pickerFavoritesOnly,
@@ -248,6 +250,30 @@ export function WorkoutEdit() {
       ),
     [fullExerciseOptions, favoriteIdSet, pickerFavoritesOnly],
   );
+  const getExerciseDisplayName = useMemo(
+    () => (uniqueName: string) => {
+      const ex = allExercises.find((item) => item.unique_name === uniqueName);
+      if (ex) {
+        return ex.unique_name.startsWith("custom_") ? ex.name : t(ex.unique_name);
+      }
+      return t(uniqueName);
+    },
+    [allExercises, t],
+  );
+  const exerciseNotes = (workout?.exercises ?? [])
+    .map((exercise) => {
+      const uniqueName = exercise.exerciseUniqueName;
+      return {
+        uniqueName,
+        displayName: getExerciseDisplayName(uniqueName),
+        note: notesByExerciseUniqueName[uniqueName]?.trim() ?? "",
+      };
+    })
+    .filter((item) => item.note)
+    .filter(
+      (item, index, arr) =>
+        arr.findIndex((other) => other.uniqueName === item.uniqueName) === index,
+    );
 
   const onSave = handleSubmit(async (data) => {
     if (!id || !workout) return;
@@ -324,6 +350,25 @@ export function WorkoutEdit() {
           {t("titles_workoutDetailEdit")}
         </h1>
       </header>
+      {exerciseNotes.length > 0 && (
+        <div className="rounded-lg border border-brand-border bg-brand-bg p-4 mb-4">
+          <h2 className="text-base font-medium text-brand-dark mb-2">
+            {t("exerciseNote_modalTitle")}
+          </h2>
+          <div className="space-y-2">
+            {exerciseNotes.map((item) => (
+              <div key={item.uniqueName}>
+                <p className="text-sm font-medium text-brand-dark">
+                  {item.displayName}
+                </p>
+                <p className="text-sm text-brand-text whitespace-pre-wrap">
+                  {item.note}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="rounded-lg border border-brand-border bg-brand-bg-soft p-4 mb-4">
         <form id="workout-edit-form" onSubmit={onSave} className="space-y-6">
