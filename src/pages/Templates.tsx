@@ -182,6 +182,32 @@ export function Templates() {
     );
   }, []);
 
+  const moveExercise = useCallback((fromIndex: number, toIndex: number) => {
+    setSelectedUniqueNames((prev) => {
+      if (
+        fromIndex < 0 ||
+        toIndex < 0 ||
+        fromIndex >= prev.length ||
+        toIndex >= prev.length
+      ) {
+        return prev;
+      }
+      const next = [...prev];
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      return next;
+    });
+  }, []);
+
+  const handleSelectionChange = useCallback((selected: readonly Option[] | null) => {
+    const nextValues = selected ? selected.map((o) => o.value) : [];
+    setSelectedUniqueNames((prev) => {
+      const keptInOrder = prev.filter((value) => nextValues.includes(value));
+      const appendedNew = nextValues.filter((value) => !keptInOrder.includes(value));
+      return [...keptInOrder, ...appendedNew];
+    });
+  }, []);
+
   const handleEdit = useCallback((template: WorkoutTemplate) => {
     setEditTarget(template);
     setTemplateName(template.name);
@@ -309,11 +335,7 @@ export function Templates() {
                 hideSelectedOptions={false}
                 controlShouldRenderValue={false}
                 value={selectedOptions}
-                onChange={(selected) =>
-                  setSelectedUniqueNames(
-                    selected ? selected.map((o) => o.value) : [],
-                  )
-                }
+                onChange={handleSelectionChange}
                 options={options}
                 placeholder="—"
                 styles={selectStylesMulti}
@@ -337,13 +359,41 @@ export function Templates() {
                         {index + 1}. {item.label}
                       </p>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveExercise(item.uniqueName)}
-                      className="text-xs text-brand-text-muted hover:text-red-400 transition-colors"
-                    >
-                      {t("workout_remove")}
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => moveExercise(index, index - 1)}
+                        disabled={index === 0}
+                        className={cn(
+                          "text-xs rounded border px-2 py-1 transition-colors",
+                          index === 0
+                            ? "border-brand-border bg-brand-code-bg text-brand-text-muted cursor-not-allowed"
+                            : "border-brand-border text-brand-text-muted hover:bg-brand-bg-soft",
+                        )}
+                      >
+                        {t("templates_moveUp")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => moveExercise(index, index + 1)}
+                        disabled={index === selectedExerciseItems.length - 1}
+                        className={cn(
+                          "text-xs rounded border px-2 py-1 transition-colors",
+                          index === selectedExerciseItems.length - 1
+                            ? "border-brand-border bg-brand-code-bg text-brand-text-muted cursor-not-allowed"
+                            : "border-brand-border text-brand-text-muted hover:bg-brand-bg-soft",
+                        )}
+                      >
+                        {t("templates_moveDown")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveExercise(item.uniqueName)}
+                        className="text-xs text-brand-text-muted hover:text-red-400 transition-colors"
+                      >
+                        {t("workout_remove")}
+                      </button>
+                    </div>
                   </li>
                 ))}
               </ul>
