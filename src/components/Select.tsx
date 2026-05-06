@@ -4,9 +4,9 @@ import { cn } from "../lib/utils";
 export const selectStyles = {
   control: (base: Record<string, unknown>, state: { isFocused: boolean }) => ({
     ...base,
-    height: 42,
     minHeight: 42,
-    padding: "0 10px",
+    height: "auto",
+    padding: "6px 10px",
     cursor: "pointer",
     backgroundColor: "var(--brand-bg)",
     borderColor: state.isFocused
@@ -19,13 +19,15 @@ export const selectStyles = {
   valueContainer: (base: Record<string, unknown>) => ({
     ...base,
     padding: 0,
-    maxHeight: 42,
-    overflowY: "auto" as const,
   }),
   singleValue: (base: Record<string, unknown>) => ({
     ...base,
     color: "var(--brand-text)",
     whiteSpace: "normal" as const,
+    position: "relative" as const,
+    transform: "none",
+    top: "auto",
+    maxWidth: "100%",
   }),
   input: (base: Record<string, unknown>) => ({
     ...base,
