@@ -5,8 +5,10 @@ import {
   useCallback,
   useMemo,
   type FocusEventHandler,
+  type ReactNode,
 } from "react";
 import { useNavigate } from "react-router-dom";
+import { WorkoutLastTemplateTrainingPanel } from "../components/WorkoutLastTemplateTrainingPanel";
 import { useForm, useFieldArray, Controller } from "react-hook-form";
 import type { UseFormRegisterReturn } from "react-hook-form";
 import { useCurrentWorkout } from "../contexts/CurrentWorkoutContext";
@@ -227,7 +229,11 @@ function canFinishWorkout(
   return hasAtLeastOneValidSet && everySetValid;
 }
 
-export function Workout() {
+export function Workout({
+  myWorkoutSubHeaderTabs,
+}: {
+  myWorkoutSubHeaderTabs?: ReactNode;
+} = {}) {
   const {
     currentWorkout,
     startWorkout,
@@ -249,7 +255,7 @@ export function Workout() {
   const [removeExerciseTarget, setRemoveExerciseTarget] = useState<number | null>(
     null,
   );
-  const { appendWorkout } = useCompletedWorkouts();
+  const { appendWorkout, workouts } = useCompletedWorkouts();
   const navigate = useNavigate();
   const [discardModalOpen, setDiscardModalOpen] = useState(false);
   const [finishModalOpen, setFinishModalOpen] = useState(false);
@@ -263,6 +269,9 @@ export function Workout() {
   const [atBottom, setAtBottom] = useState(true);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
   const [mobileEditorOpen, setMobileEditorOpen] = useState(false);
+  const [templateWorkoutTab, setTemplateWorkoutTab] = useState<
+    "current" | "last"
+  >("current");
   const exerciseListScrollRef = useRef<HTMLUListElement>(null);
 
   const checkScroll = useCallback(() => {
@@ -272,6 +281,17 @@ export function Workout() {
     setAtTop(el.scrollTop <= threshold);
     setAtBottom(el.scrollHeight - el.scrollTop - el.clientHeight <= threshold);
   }, []);
+
+  const lastCompletedWithSameTemplate = useMemo(() => {
+    const tid = currentWorkout?.templateId;
+    if (!tid) return null;
+    const same = workouts.filter((w) => w.templateId === tid);
+    if (same.length === 0) return null;
+    return [...same].sort(
+      (a, b) =>
+        new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime(),
+    )[0];
+  }, [workouts, currentWorkout?.templateId]);
 
   const expiredDraftForThisWorkout = (() => {
     if (!currentWorkout) return null;
@@ -331,6 +351,10 @@ export function Workout() {
       media.removeEventListener("change", updateViewportFlag);
     };
   }, []);
+
+  useEffect(() => {
+    if (currentWorkout?.id) setTemplateWorkoutTab("current");
+  }, [currentWorkout?.id]);
 
   useEffect(() => {
     if (!currentWorkout) {
@@ -543,6 +567,9 @@ export function Workout() {
         <h1 className="text-2xl font-semibold text-brand-dark mb-2">
           {t("workout_title")}
         </h1>
+        {myWorkoutSubHeaderTabs ? (
+          <div className="mb-4">{myWorkoutSubHeaderTabs}</div>
+        ) : null}
         <p className="text-brand-text-muted mb-6">{t("workout_noWorkout")}</p>
         <div className="flex flex-col gap-4">
           <button
@@ -592,6 +619,48 @@ export function Workout() {
     currentWorkout.templateId != null
       ? templates.find((t) => t.id === currentWorkout.templateId)
       : undefined;
+  const hasActiveTemplateId = currentWorkout.templateId != null;
+  const isLastTemplateView = Boolean(
+    hasActiveTemplateId && templateWorkoutTab === "last",
+  );
+  const showLastTrainingAsMainColumn =
+    isLastTemplateView && !isMobileViewport;
+  const templateSessionTablist = hasActiveTemplateId ? (
+    <div
+      className="flex gap-1 rounded-lg border border-brand-border bg-brand-bg-soft p-1 w-fit max-w-full flex-wrap"
+      role="tablist"
+      aria-label={t("workout_sessionTabs_aria")}
+    >
+      <button
+        type="button"
+        role="tab"
+        aria-selected={templateWorkoutTab === "current"}
+        onClick={() => setTemplateWorkoutTab("current")}
+        className={cn(
+          "rounded-md px-4 py-2 text-sm font-medium transition-colors",
+          templateWorkoutTab === "current"
+            ? "bg-brand-primary text-brand-bg"
+            : "text-brand-text-muted hover:text-brand-text hover:bg-brand-bg",
+        )}
+      >
+        {t("workout_tabCurrentTraining")}
+      </button>
+      <button
+        type="button"
+        role="tab"
+        aria-selected={templateWorkoutTab === "last"}
+        onClick={() => setTemplateWorkoutTab("last")}
+        className={cn(
+          "rounded-md px-4 py-2 text-sm font-medium transition-colors",
+          templateWorkoutTab === "last"
+            ? "bg-brand-primary text-brand-bg"
+            : "text-brand-text-muted hover:text-brand-text hover:bg-brand-bg",
+        )}
+      >
+        {t("workout_tabLastTraining")}
+      </button>
+    </div>
+  ) : null;
   const workoutEditorBody = (
     <>
       <div
@@ -963,40 +1032,67 @@ export function Workout() {
           </p>
         )}
       </header>
-      <div className="hidden sm:flex sm:flex-1 sm:min-h-0 sm:flex-col">
-        {workoutEditorBody}
-      </div>
-      <div className="sm:hidden">
-        {!mobileEditorOpen && (
-          <button
-            type="button"
-            onClick={() => setMobileEditorOpen(true)}
-            className="w-full rounded-lg border border-brand-primary text-brand-primary px-4 py-2 font-medium hover:bg-brand-primary/10 transition-colors"
-          >
-            {t("workout_title")}
-          </button>
-        )}
-        {mobileEditorOpen && (
-          <div className="fixed inset-0 z-50 bg-brand-bg-soft p-4 flex flex-col">
-            <div className="shrink-0 mb-3 flex items-center justify-between gap-3">
-              <h2 className="text-lg font-semibold text-brand-dark">
-                {t("workout_title")}
-              </h2>
+      {myWorkoutSubHeaderTabs ? (
+        <div className="shrink-0 mb-4">{myWorkoutSubHeaderTabs}</div>
+      ) : null}
+      {templateSessionTablist && !isMobileViewport ? (
+        <div className="shrink-0 mb-4">{templateSessionTablist}</div>
+      ) : null}
+      {showLastTrainingAsMainColumn ? (
+        <div className="flex-1 min-h-0 overflow-y-auto flex flex-col pr-1 -mr-1">
+          <WorkoutLastTemplateTrainingPanel
+            lastWorkout={lastCompletedWithSameTemplate}
+          />
+        </div>
+      ) : (
+        <>
+          <div className="hidden sm:flex sm:flex-1 sm:min-h-0 sm:flex-col">
+            {workoutEditorBody}
+          </div>
+          <div className="sm:hidden">
+            {!mobileEditorOpen && (
               <button
                 type="button"
-                onClick={() => setMobileEditorOpen(false)}
-                className="rounded-lg border border-brand-border px-3 py-1.5 text-sm text-brand-text hover:bg-brand-bg transition-colors"
-                aria-label={t("nav_close")}
+                onClick={() => setMobileEditorOpen(true)}
+                className="w-full rounded-lg border border-brand-primary text-brand-primary px-4 py-2 font-medium hover:bg-brand-primary/10 transition-colors"
               >
-                {t("nav_close")}
+                {t("workout_title")}
               </button>
-            </div>
-            <div className="flex-1 min-h-0 flex flex-col">
-              {workoutEditorBody}
-            </div>
+            )}
+            {mobileEditorOpen && (
+              <div className="fixed inset-0 z-50 bg-brand-bg-soft p-4 flex flex-col">
+                <div className="shrink-0 mb-3 flex items-center justify-between gap-3">
+                  <h2 className="text-lg font-semibold text-brand-dark">
+                    {t("workout_title")}
+                  </h2>
+                  <button
+                    type="button"
+                    onClick={() => setMobileEditorOpen(false)}
+                    className="rounded-lg border border-brand-border px-3 py-1.5 text-sm text-brand-text hover:bg-brand-bg transition-colors"
+                    aria-label={t("nav_close")}
+                  >
+                    {t("nav_close")}
+                  </button>
+                </div>
+                {templateSessionTablist ? (
+                  <div className="shrink-0 mb-3">{templateSessionTablist}</div>
+                ) : null}
+                {isLastTemplateView ? (
+                  <div className="flex-1 min-h-0 overflow-y-auto flex flex-col pr-1 -mr-1">
+                    <WorkoutLastTemplateTrainingPanel
+                      lastWorkout={lastCompletedWithSameTemplate}
+                    />
+                  </div>
+                ) : (
+                  <div className="flex-1 min-h-0 flex flex-col">
+                    {workoutEditorBody}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </>
+      )}
       {finishModalOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"

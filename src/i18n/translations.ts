@@ -97,6 +97,12 @@ export const translations: Record<Locale, Record<string, string>> = {
     workout_finishModalNoteLabel: "Note (optional)",
     workout_finishModalNotePlaceholder: "How did the workout go?",
     workout_templateCopy: "copy",
+    workout_tabCurrentTraining: "Current training",
+    workout_tabLastTraining: "Last training",
+    workout_sessionTabs_aria: "Switch between current and last training",
+    workout_lastTrainingEmpty:
+      "No completed training with this template yet. After you finish one, it will appear here.",
+    workout_openFullDetails: "Open full workout",
     history_title: "Training summary",
     history_description:
       "List workouts, filter by period or exercise, view graphs, edit completed workouts.",
@@ -418,6 +424,12 @@ export const translations: Record<Locale, Record<string, string>> = {
     workout_finishModalNoteLabel: "Notatka (opcjonalnie)",
     workout_finishModalNotePlaceholder: "Jak poszedł trening?",
     workout_templateCopy: "kopia",
+    workout_tabCurrentTraining: "Bieżący trening",
+    workout_tabLastTraining: "Ostatni trening",
+    workout_sessionTabs_aria: "Przełącz między bieżącym a ostatnim treningiem",
+    workout_lastTrainingEmpty:
+      "Brak ukończonego treningu z tego szablonu. Po zakończeniu treningu pojawi się tutaj.",
+    workout_openFullDetails: "Otwórz pełny trening",
     history_title: "Podsumowanie treningów",
     history_description:
       "Lista treningów, filtrowanie po okresie lub ćwiczeniu, wykresy, edycja zakończonych treningów.",
