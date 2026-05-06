@@ -163,7 +163,7 @@ export function Exercises() {
   };
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 gap-4">
+    <div className="flex flex-col flex-1 min-h-0 max-sm:flex-none gap-4">
       <header className="shrink-0">
         <h1 className="text-2xl font-semibold text-brand-dark mb-2">
           {t("exercises_title")}
@@ -362,14 +362,15 @@ export function Exercises() {
 
       <div
         className={cn(
-          "flex-1 min-h-0 relative scroll-fade-bottom scroll-fade-top",
+          "flex-1 min-h-0 relative max-sm:flex-none max-sm:min-h-0",
+          "sm:scroll-fade-bottom sm:scroll-fade-top",
           atBottom && "at-bottom",
           atTop && "at-top",
         )}
       >
         <div
           ref={scrollRef}
-          className="h-full overflow-y-auto"
+          className="max-sm:h-auto max-sm:overflow-visible sm:h-full sm:overflow-y-auto"
           onScroll={checkScroll}
         >
           <ul className="space-y-2 pr-3 pb-2">
