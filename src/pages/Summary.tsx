@@ -101,6 +101,16 @@ export function Summary() {
 
   return (
     <div className="flex flex-col gap-8">
+      <p>
+        <Link
+          to={routes.dashboard}
+          className={cn(
+            "text-sm font-medium text-brand-accent hover:text-brand-primary-hover transition-colors",
+          )}
+        >
+          ← {t("nav_dashboard")}
+        </Link>
+      </p>
       <header>
         <h1 className="text-2xl font-semibold text-brand-dark mb-1">
           {t("summary_title")}
@@ -253,17 +263,6 @@ export function Summary() {
           </section>
         </>
       )}
-
-      <p>
-        <Link
-          to={routes.dashboard}
-          className={cn(
-            "text-sm font-medium text-brand-accent hover:text-brand-primary-hover transition-colors",
-          )}
-        >
-          ← {t("nav_dashboard")}
-        </Link>
-      </p>
     </div>
   );
 }
