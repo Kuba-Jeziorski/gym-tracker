@@ -1,8 +1,8 @@
 import { useMemo } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useLanguage } from "../contexts/LanguageContext";
-import { useCompletedWorkouts } from "../contexts/CompletedWorkoutsContext";
 import { useAllExercises } from "../contexts/CustomExercisesContext";
+import { useTrainingsQuery } from "../hooks/useTrainingsQuery";
 import { useWeightUnit } from "../contexts/WeightUnitContext";
 import { routes } from "../routes";
 import type { StoredSet } from "../data/workoutStorage";
@@ -67,7 +67,7 @@ export function ExerciseHistory() {
   const { exerciseKey } = useParams<{ exerciseKey: string }>();
   const { t } = useLanguage();
   const { weightUnit } = useWeightUnit();
-  const { workouts, isLoading } = useCompletedWorkouts();
+  const { workouts, isLoading } = useTrainingsQuery();
   const allExercises = useAllExercises();
 
   const uniqueName = exerciseKey ? decodeURIComponent(exerciseKey) : "";

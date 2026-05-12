@@ -6,8 +6,9 @@ import {
 } from 'react'
 import type { StoredWorkout } from '../data/workoutStorage'
 import { useAuth } from './AuthContext'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { deleteTrainingById, fetchTrainings, type TrainingRow, toStoredWorkout, updateTrainingById, upsertTraining } from '../services/trainingsDb'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { deleteTrainingById, updateTrainingById, upsertTraining } from '../services/trainingsDb'
+import { trainingsQueryKey, useTrainingsQuery } from '../hooks/useTrainingsQuery'
 
 type CompletedWorkoutsContextValue = {
   workouts: StoredWorkout[]
@@ -23,19 +24,7 @@ export function CompletedWorkoutsProvider({ children }: { children: ReactNode })
   const { user } = useAuth()
   const userId = user?.id ?? null
   const queryClient = useQueryClient()
-
-  const trainingsQuery = useQuery({
-    queryKey: ['trainings', userId],
-    enabled: Boolean(userId),
-    queryFn: async () => {
-      const { data, error } = await fetchTrainings(userId!)
-      if (error) throw error
-      return ((data ?? []) as TrainingRow[]).map(toStoredWorkout)
-    },
-  })
-
-  const workouts = trainingsQuery.data ?? []
-  const isLoading = trainingsQuery.isLoading
+  const { workouts, isLoading } = useTrainingsQuery()
 
   const appendMutation = useMutation({
     mutationFn: async (workout: StoredWorkout) => {
@@ -53,7 +42,7 @@ export function CompletedWorkoutsProvider({ children }: { children: ReactNode })
       if (error) throw error
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['trainings', userId] })
+      await queryClient.invalidateQueries({ queryKey: trainingsQueryKey(userId) })
     },
   })
 
@@ -70,7 +59,7 @@ export function CompletedWorkoutsProvider({ children }: { children: ReactNode })
       if (error) throw error
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['trainings', userId] })
+      await queryClient.invalidateQueries({ queryKey: trainingsQueryKey(userId) })
     },
   })
 
@@ -81,7 +70,7 @@ export function CompletedWorkoutsProvider({ children }: { children: ReactNode })
       if (error) throw error
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['trainings', userId] })
+      await queryClient.invalidateQueries({ queryKey: trainingsQueryKey(userId) })
     },
   })
 
