@@ -105,22 +105,25 @@ export function Exercises() {
     setFormOpen(false);
   }, []);
 
-  const handleEdit = useCallback((ex: Exercise) => {
-    setEditTarget(ex);
-    setName(ex.name);
-    setWeight(ex.weight);
-    setReps(ex.reps);
-    setTime(ex.time);
-    setDistance(Boolean(ex.distance));
-    setAvgVelocity(Boolean(ex.avgVelocity));
-    setPace(Boolean(ex.pace));
-    setMainMuscleGroup(ex.main_muscle_group ?? "");
-    setAllMuscleGroups(ex.all_muscle_groups ?? []);
-    setNoteDraft(notesByExerciseUniqueName[ex.unique_name] ?? "");
-    requestAnimationFrame(() =>
-      formRef.current?.scrollIntoView({ behavior: "smooth" }),
-    );
-  }, [notesByExerciseUniqueName]);
+  const handleEdit = useCallback(
+    (ex: Exercise) => {
+      setEditTarget(ex);
+      setName(ex.name);
+      setWeight(ex.weight);
+      setReps(ex.reps);
+      setTime(ex.time);
+      setDistance(Boolean(ex.distance));
+      setAvgVelocity(Boolean(ex.avgVelocity));
+      setPace(Boolean(ex.pace));
+      setMainMuscleGroup(ex.main_muscle_group ?? "");
+      setAllMuscleGroups(ex.all_muscle_groups ?? []);
+      setNoteDraft(notesByExerciseUniqueName[ex.unique_name] ?? "");
+      requestAnimationFrame(() =>
+        formRef.current?.scrollIntoView({ behavior: "smooth" }),
+      );
+    },
+    [notesByExerciseUniqueName],
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,7 +131,8 @@ export function Exercises() {
     const isEditingCustomExercise = editTarget ? isCustom(editTarget) : false;
     if (isEditingCustomExercise) {
       if (!trimmed) return;
-      if (!weight && !reps && !time && !distance && !avgVelocity && !pace) return;
+      if (!weight && !reps && !time && !distance && !avgVelocity && !pace)
+        return;
     }
     if (editTarget) {
       if (isEditingCustomExercise) {
@@ -256,8 +260,8 @@ export function Exercises() {
             />
           </div>
         </div>
-        <div className="flex flex-wrap items-start lg:items-end gap-4 max-lg:flex-col">
-          <label className="flex flex-col gap-2 min-w-0 max-lg:w-full max-lg:max-w-[400px]">
+        <div className="flex items-start lg:items-end gap-4 flex-col lg:flex-row">
+          <label className="flex flex-col gap-2 flex-1 w-full">
             <span className="text-sm text-brand-text-muted">
               {t("exercises_mainMuscleGroup")}
             </span>
@@ -269,7 +273,7 @@ export function Exercises() {
               className="min-w-0 w-full sm:min-w-[12rem] sm:w-auto"
             />
           </label>
-          <label className="flex flex-col gap-2 min-w-0 flex-1 max-lg:w-full max-lg:max-w-[400px]">
+          <label className="flex flex-col gap-2 w-full">
             <span className="text-sm text-brand-text-muted">
               {t("exercises_allMuscleGroups")}
             </span>
@@ -335,12 +339,7 @@ export function Exercises() {
                 "rounded-lg border px-4 py-2 text-sm font-medium transition-colors",
                 editTarget ||
                   (name.trim() &&
-                    (weight ||
-                      reps ||
-                      time ||
-                      distance ||
-                      avgVelocity ||
-                      pace))
+                    (weight || reps || time || distance || avgVelocity || pace))
                   ? "border-transparent bg-brand-primary text-brand-bg hover:bg-brand-primary-hover"
                   : "border-brand-border bg-brand-code-bg text-brand-text-muted cursor-not-allowed",
               )}
@@ -467,16 +466,16 @@ export function Exercises() {
                   </button>
                   {isCustom(ex) && (
                     <>
-                    <button
-                      type="button"
-                      onClick={() => setRemoveTarget(ex.unique_name)}
-                      className={cn(
-                        "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                        "border border-brand-border text-brand-text-muted hover:bg-brand-bg-soft hover:text-red-400 hover:border-red-500/40",
-                      )}
-                    >
-                      {t("workout_remove")}
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => setRemoveTarget(ex.unique_name)}
+                        className={cn(
+                          "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                          "border border-brand-border text-brand-text-muted hover:bg-brand-bg-soft hover:text-red-400 hover:border-red-500/40",
+                        )}
+                      >
+                        {t("workout_remove")}
+                      </button>
                     </>
                   )}
                 </div>
