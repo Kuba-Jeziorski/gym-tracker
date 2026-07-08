@@ -26,6 +26,24 @@ export type ExercisePersonalBest = {
   longestTimeDate: string | null
 }
 
+export type MaxWeightOverTimePoint = {
+  completedAt: string
+  maxWeightKg: number
+  repsAtMaxWeight: number | null
+}
+
+function parseSetWeightKg(weight?: string): number | null {
+  const wStr = weight?.trim()
+  const weightKg = wStr ? parseFloat(wStr) : NaN
+  return Number.isFinite(weightKg) && weightKg > 0 ? weightKg : null
+}
+
+function parseSetReps(reps?: string): number | null {
+  const repsStr = reps?.trim()
+  const parsed = repsStr ? parseInt(repsStr, 10) : NaN
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null
+}
+
 export function formatPBDate(isoDate: string): string {
   const d = new Date(isoDate)
   return [
@@ -33,6 +51,64 @@ export function formatPBDate(isoDate: string): string {
     (d.getMonth() + 1).toString().padStart(2, '0'),
     d.getFullYear(),
   ].join('.')
+}
+
+/** Exercise unique names that appear in at least one set with logged weight. */
+export function getExerciseUniqueNamesWithWeightData(
+  workouts: StoredWorkout[],
+): string[] {
+  const names = new Set<string>()
+  for (const w of workouts) {
+    for (const ex of w.exercises) {
+      if (!ex.exerciseUniqueName) continue
+      for (const set of ex.sets ?? []) {
+        if (parseSetWeightKg(set.weight) != null) {
+          names.add(ex.exerciseUniqueName)
+          break
+        }
+      }
+    }
+  }
+  return Array.from(names)
+}
+
+/** Max weight per workout for one exercise, oldest to newest. */
+export function computeMaxWeightOverTime(
+  workouts: StoredWorkout[],
+  exerciseUniqueName: string,
+): MaxWeightOverTimePoint[] {
+  const points: MaxWeightOverTimePoint[] = []
+  for (const w of workouts) {
+    let maxInWorkout: number | null = null
+    let repsAtMax: number | null = null
+    for (const ex of w.exercises) {
+      if (ex.exerciseUniqueName !== exerciseUniqueName) continue
+      for (const set of ex.sets ?? []) {
+        const weightKg = parseSetWeightKg(set.weight)
+        if (weightKg == null) continue
+        const reps = parseSetReps(set.reps)
+        if (maxInWorkout == null || weightKg > maxInWorkout) {
+          maxInWorkout = weightKg
+          repsAtMax = reps
+        } else if (weightKg === maxInWorkout && reps != null) {
+          repsAtMax =
+            repsAtMax == null ? reps : Math.max(repsAtMax, reps)
+        }
+      }
+    }
+    if (maxInWorkout != null) {
+      points.push({
+        completedAt: w.completedAt,
+        maxWeightKg: maxInWorkout,
+        repsAtMaxWeight: repsAtMax,
+      })
+    }
+  }
+  points.sort(
+    (a, b) =>
+      new Date(a.completedAt).getTime() - new Date(b.completedAt).getTime(),
+  )
+  return points
 }
 
 export function computePersonalBests(workouts: StoredWorkout[]): Map<string, ExercisePersonalBest> {
@@ -52,12 +128,11 @@ export function computePersonalBests(workouts: StoredWorkout[]): Map<string, Exe
         longestTimeDate: null,
       }
       for (const set of ex.sets ?? []) {
-        const wStr = set.weight?.trim()
-        const weightKg = wStr ? parseFloat(wStr) : NaN
+        const weightKg = parseSetWeightKg(set.weight) ?? NaN
         const repsStr = set.reps?.trim()
         const reps = repsStr ? parseInt(repsStr, 10) : NaN
         const timeSec = set.time ? parseTimeToSeconds(set.time) : null
-        if (Number.isFinite(weightKg) && weightKg > 0) {
+        if (Number.isFinite(weightKg)) {
           if (cur.highestWeightKg == null || weightKg > cur.highestWeightKg) {
             cur = { ...cur, highestWeightKg: weightKg, highestWeightDate: completedAt }
           }
