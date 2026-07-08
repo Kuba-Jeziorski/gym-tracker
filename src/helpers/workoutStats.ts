@@ -32,6 +32,13 @@ export type MaxWeightOverTimePoint = {
   repsAtMaxWeight: number | null
 }
 
+export type MaxVolumeOverTimePoint = {
+  completedAt: string
+  maxVolumeKg: number
+  weightKgAtMaxVolume: number
+  repsAtMaxVolume: number
+}
+
 function parseSetWeightKg(weight?: string): number | null {
   const wStr = weight?.trim()
   const weightKg = wStr ? parseFloat(wStr) : NaN
@@ -42,6 +49,13 @@ function parseSetReps(reps?: string): number | null {
   const repsStr = reps?.trim()
   const parsed = repsStr ? parseInt(repsStr, 10) : NaN
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null
+}
+
+function parseSetVolumeKg(weight?: string, reps?: string): number | null {
+  const weightKg = parseSetWeightKg(weight)
+  const setReps = parseSetReps(reps)
+  if (weightKg == null || setReps == null) return null
+  return weightKg * setReps
 }
 
 export function formatPBDate(isoDate: string): string {
@@ -63,6 +77,25 @@ export function getExerciseUniqueNamesWithWeightData(
       if (!ex.exerciseUniqueName) continue
       for (const set of ex.sets ?? []) {
         if (parseSetWeightKg(set.weight) != null) {
+          names.add(ex.exerciseUniqueName)
+          break
+        }
+      }
+    }
+  }
+  return Array.from(names)
+}
+
+/** Exercise unique names with at least one set that has weight and reps. */
+export function getExerciseUniqueNamesWithVolumeData(
+  workouts: StoredWorkout[],
+): string[] {
+  const names = new Set<string>()
+  for (const w of workouts) {
+    for (const ex of w.exercises) {
+      if (!ex.exerciseUniqueName) continue
+      for (const set of ex.sets ?? []) {
+        if (parseSetVolumeKg(set.weight, set.reps) != null) {
           names.add(ex.exerciseUniqueName)
           break
         }
@@ -101,6 +134,46 @@ export function computeMaxWeightOverTime(
         completedAt: w.completedAt,
         maxWeightKg: maxInWorkout,
         repsAtMaxWeight: repsAtMax,
+      })
+    }
+  }
+  points.sort(
+    (a, b) =>
+      new Date(a.completedAt).getTime() - new Date(b.completedAt).getTime(),
+  )
+  return points
+}
+
+/** Max set volume (kg × reps) per workout for one exercise, oldest to newest. */
+export function computeMaxVolumeOverTime(
+  workouts: StoredWorkout[],
+  exerciseUniqueName: string,
+): MaxVolumeOverTimePoint[] {
+  const points: MaxVolumeOverTimePoint[] = []
+  for (const w of workouts) {
+    let maxInWorkout: number | null = null
+    let weightAtMax: number | null = null
+    let repsAtMax: number | null = null
+    for (const ex of w.exercises) {
+      if (ex.exerciseUniqueName !== exerciseUniqueName) continue
+      for (const set of ex.sets ?? []) {
+        const volumeKg = parseSetVolumeKg(set.weight, set.reps)
+        if (volumeKg == null) continue
+        const weightKg = parseSetWeightKg(set.weight)!
+        const reps = parseSetReps(set.reps)!
+        if (maxInWorkout == null || volumeKg > maxInWorkout) {
+          maxInWorkout = volumeKg
+          weightAtMax = weightKg
+          repsAtMax = reps
+        }
+      }
+    }
+    if (maxInWorkout != null && weightAtMax != null && repsAtMax != null) {
+      points.push({
+        completedAt: w.completedAt,
+        maxVolumeKg: maxInWorkout,
+        weightKgAtMaxVolume: weightAtMax,
+        repsAtMaxVolume: repsAtMax,
       })
     }
   }
