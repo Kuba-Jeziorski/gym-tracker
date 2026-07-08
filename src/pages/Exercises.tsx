@@ -200,15 +200,21 @@ export function Exercises() {
         )}
       >
         <h2 className="text-lg font-medium text-brand-dark mb-3">
-          {editTarget ? t("exercises_editTitle") : t("exercises_add")}
+          {editTarget
+            ? isCustom(editTarget)
+              ? t("exercises_editTitle")
+              : t("exerciseNote_modalTitle")
+            : t("exercises_add")}
         </h2>
-        {!editTarget || isCustom(editTarget) ? null : (
+        {editTarget && !isCustom(editTarget) ? (
           <p className="text-sm text-brand-text-muted">
             {t("exerciseNote_modalDescription")}
           </p>
-        )}
-        <div className="flex flex-wrap items-end gap-4">
-          <label className="flex flex-col gap-2">
+        ) : null}
+        {(!editTarget || isCustom(editTarget)) && (
+          <>
+        <div className="flex flex-wrap items-start lg:items-end gap-4 max-sm:flex-col">
+          <label className="flex flex-col gap-2 w-full sm:w-auto">
             <span className="text-sm text-brand-text-muted">
               {t("exercises_namePlaceholder")}
             </span>
@@ -221,7 +227,7 @@ export function Exercises() {
               className="rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder min-w-0 w-full sm:min-w-[16rem] sm:w-auto"
             />
           </label>
-          <div className="flex items-center gap-6 min-h-[42px] flex-wrap">
+          <div className="flex items-center gap-6 min-h-[42px] flex-wrap w-full">
             <Switch
               checked={weight}
               onChange={setWeight}
@@ -260,7 +266,7 @@ export function Exercises() {
             />
           </div>
         </div>
-        <div className="flex items-start lg:items-end gap-4 flex-col lg:flex-row">
+        <div className="flex flex-wrap items-start lg:items-end gap-4 max-sm:flex-col">
           <label className="flex flex-col gap-2 flex-1 w-full">
             <span className="text-sm text-brand-text-muted">
               {t("exercises_mainMuscleGroup")}
@@ -307,11 +313,15 @@ export function Exercises() {
             </div>
           </label>
         </div>
+          </>
+        )}
         {editTarget && (
           <label className="flex flex-col gap-2">
-            <span className="text-sm text-brand-text-muted">
-              {t("exerciseNote_modalTitle")}
-            </span>
+            {isCustom(editTarget) ? (
+              <span className="text-sm text-brand-text-muted">
+                {t("exerciseNote_modalTitle")}
+              </span>
+            ) : null}
             <textarea
               value={noteDraft}
               onChange={(e) => setNoteDraft(e.target.value)}
@@ -454,16 +464,29 @@ export function Exercises() {
                   )}
                 </div>
                 <div className="flex gap-2 sm:items-center sm:justify-end">
-                  <button
-                    type="button"
-                    onClick={() => handleEdit(ex)}
-                    className={cn(
-                      "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                      "border border-brand-border text-brand-text-muted hover:bg-brand-bg-soft",
-                    )}
-                  >
-                    {t("exercises_edit")}
-                  </button>
+                  {isCustom(ex) ? (
+                    <button
+                      type="button"
+                      onClick={() => handleEdit(ex)}
+                      className={cn(
+                        "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                        "border border-brand-border text-brand-text-muted hover:bg-brand-bg-soft",
+                      )}
+                    >
+                      {t("exercises_edit")}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleEdit(ex)}
+                      className={cn(
+                        "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                        "border border-brand-border text-brand-text-muted hover:bg-brand-bg-soft",
+                      )}
+                    >
+                      {t("exerciseNote_edit")}
+                    </button>
+                  )}
                   {isCustom(ex) && (
                     <>
                       <button

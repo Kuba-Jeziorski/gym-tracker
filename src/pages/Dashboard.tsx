@@ -6,20 +6,15 @@ import { useCompletedWorkouts } from "../contexts/CompletedWorkoutsContext";
 import { useWorkoutTemplates } from "../contexts/WorkoutTemplatesContext";
 import { useUserProfile } from "../contexts/UserProfileContext";
 import { useAllExercises } from "../contexts/CustomExercisesContext";
-import { useWeightUnit } from "../contexts/WeightUnitContext";
 import { routes } from "../routes";
 import type { StoredWorkout } from "../data/workoutStorage";
 import {
-  computePersonalBests,
   countTotalSets,
   getWorkoutsThisCalendarWeek,
-  formatPBDate,
-  formatTimeSeconds,
 } from "../helpers/workoutStats";
-import { kgToLb } from "../helpers/weightConversion";
 import { cn } from "../lib/utils";
 import { Dumbbell } from "lucide-react";
-import Tooltip from "@mui/material/Tooltip";
+import { PersonalBestsList } from "../components/PersonalBestsList";
 
 function formatDMY(d: Date) {
   return [
@@ -174,7 +169,6 @@ export function Dashboard() {
   const { profile } = useUserProfile();
   const allExercises = useAllExercises();
   const { templates } = useWorkoutTemplates();
-  const { weightUnit } = useWeightUnit();
 
   const recentWorkouts = [...workouts]
     .sort(
@@ -194,23 +188,6 @@ export function Dashboard() {
       setsThisWeek: countTotalSets(thisWeek),
     };
   }, [workouts]);
-
-  const personalBests = useMemo(
-    () => computePersonalBests(workouts),
-    [workouts],
-  );
-
-  const pbList = useMemo(
-    () =>
-      Array.from(personalBests.entries())
-        .map(([uniqueName, pb]) => ({
-          uniqueName,
-          displayName: getExerciseDisplayName(uniqueName, allExercises, t),
-          ...pb,
-        }))
-        .sort((a, b) => a.displayName.localeCompare(b.displayName)),
-    [personalBests, allExercises, t],
-  );
 
   useLayoutEffect(() => {
     const root = rootRef.current;
@@ -240,7 +217,7 @@ export function Dashboard() {
       window.removeEventListener("resize", update);
       window.visualViewport?.removeEventListener("resize", update);
     };
-  }, [workouts, isLoading, pbList]);
+  }, [workouts, isLoading]);
 
   return (
     <div
@@ -351,137 +328,7 @@ export function Dashboard() {
         <h2 className="text-lg font-medium text-brand-dark mb-3">
           {t("user_personalBestHeading")}
         </h2>
-        {isLoading ? (
-          <p className="text-brand-text-muted text-sm">{t("loading")}</p>
-        ) : pbList.length === 0 ? (
-          <p className="text-brand-text-muted text-sm">
-            {t("user_personalBestEmpty")}
-          </p>
-        ) : (
-          <div className="rounded-xl border border-brand-border bg-brand-bg-soft overflow-hidden">
-            <ul className="divide-y divide-brand-border">
-              {pbList.map(
-                ({
-                  uniqueName,
-                  displayName,
-                  highestWeightKg,
-                  highestWeightDate,
-                  highestVolume,
-                  highestVolumeDate,
-                  mostReps,
-                  mostRepsDate,
-                  longestTimeSeconds,
-                  longestTimeDate,
-                }) => {
-                  const displayWeight = (kg: number) =>
-                    weightUnit === "lb"
-                      ? kgToLb(kg) % 1 === 0
-                        ? kgToLb(kg).toString()
-                        : kgToLb(kg).toFixed(1)
-                      : kg.toString();
-                  const hasAny =
-                    highestWeightKg != null ||
-                    highestVolume != null ||
-                    mostReps != null ||
-                    longestTimeSeconds != null;
-                  if (!hasAny) return null;
-                  return (
-                    <li key={uniqueName} className="px-4 py-4">
-                      <p className="font-medium text-brand-dark mb-3">
-                        {displayName}
-                      </p>
-                      <dl className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4 text-sm">
-                        {highestWeightKg != null && (
-                          <div>
-                            <dt className="text-brand-text-muted">
-                              <Tooltip
-                                title={t("user_pb_tooltip_highestWeight")}
-                              >
-                                <span className="cursor-help underline decoration-dotted underline-offset-2">
-                                  {t("user_pb_highestWeight")}
-                                </span>
-                              </Tooltip>
-                            </dt>
-                            <dd className="text-brand-text font-medium">
-                              {displayWeight(highestWeightKg)}{" "}
-                              {t(weightUnit === "kg" ? "unit_kg" : "unit_lb")}
-                              {highestWeightDate != null && (
-                                <span className="text-brand-text-muted font-normal ml-1">
-                                  ({formatPBDate(highestWeightDate)})
-                                </span>
-                              )}
-                            </dd>
-                          </div>
-                        )}
-                        {highestVolume != null && (
-                          <div>
-                            <dt className="text-brand-text-muted">
-                              <Tooltip
-                                title={t("user_pb_tooltip_highestVolume")}
-                              >
-                                <span className="cursor-help underline decoration-dotted underline-offset-2">
-                                  {t("user_pb_highestVolume")}
-                                </span>
-                              </Tooltip>
-                            </dt>
-                            <dd className="text-brand-text font-medium">
-                              {highestVolume % 1 === 0
-                                ? highestVolume
-                                : highestVolume.toFixed(1)}
-                              {highestVolumeDate != null && (
-                                <span className="text-brand-text-muted font-normal ml-1">
-                                  ({formatPBDate(highestVolumeDate)})
-                                </span>
-                              )}
-                            </dd>
-                          </div>
-                        )}
-                        {mostReps != null && (
-                          <div>
-                            <dt className="text-brand-text-muted">
-                              <Tooltip title={t("user_pb_tooltip_mostReps")}>
-                                <span className="cursor-help underline decoration-dotted underline-offset-2">
-                                  {t("user_pb_mostReps")}
-                                </span>
-                              </Tooltip>
-                            </dt>
-                            <dd className="text-brand-text font-medium">
-                              {mostReps}
-                              {mostRepsDate != null && (
-                                <span className="text-brand-text-muted font-normal ml-1">
-                                  ({formatPBDate(mostRepsDate)})
-                                </span>
-                              )}
-                            </dd>
-                          </div>
-                        )}
-                        {longestTimeSeconds != null && (
-                          <div>
-                            <dt className="text-brand-text-muted">
-                              <Tooltip title={t("user_pb_tooltip_longestTime")}>
-                                <span className="cursor-help underline decoration-dotted underline-offset-2">
-                                  {t("user_pb_longestTime")}
-                                </span>
-                              </Tooltip>
-                            </dt>
-                            <dd className="text-brand-text font-medium">
-                              {formatTimeSeconds(longestTimeSeconds)}
-                              {longestTimeDate != null && (
-                                <span className="text-brand-text-muted font-normal ml-1">
-                                  ({formatPBDate(longestTimeDate)})
-                                </span>
-                              )}
-                            </dd>
-                          </div>
-                        )}
-                      </dl>
-                    </li>
-                  );
-                },
-              )}
-            </ul>
-          </div>
-        )}
+        <PersonalBestsList limit={3} showViewAllLink />
       </section>
     </div>
   );

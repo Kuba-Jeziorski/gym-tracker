@@ -259,7 +259,9 @@ export function Workout({
   const navigate = useNavigate();
   const [discardModalOpen, setDiscardModalOpen] = useState(false);
   const [finishModalOpen, setFinishModalOpen] = useState(false);
-  const [finishNote, setFinishNote] = useState("");
+  const [workoutNote, setWorkoutNote] = useState("");
+  const [noteModalOpen, setNoteModalOpen] = useState(false);
+  const [showEmptySetsError, setShowEmptySetsError] = useState(false);
   const [templateSaveModal, setTemplateSaveModal] = useState<{
     stored: StoredWorkout;
     exerciseUniqueNames: string[];
@@ -331,6 +333,40 @@ export function Workout({
   const hasEmptySetsInForm = (watchedExercises ?? []).some((ex) =>
     (ex.sets ?? []).some(isEmptySet),
   );
+
+  useEffect(() => {
+    if (!hasEmptySetsInForm) setShowEmptySetsError(false);
+  }, [hasEmptySetsInForm]);
+
+  useEffect(() => {
+    if (!currentWorkout) return;
+    const draft = readCurrentWorkoutDraft();
+    if (draft?.workoutId === currentWorkout.id) {
+      setWorkoutNote(typeof draft.notes === "string" ? draft.notes : "");
+    } else {
+      setWorkoutNote("");
+    }
+  }, [currentWorkout?.id]);
+
+  useEffect(() => {
+    if (!currentWorkout) return;
+    const exercises = watchedExercises ?? [];
+    const draft = readCurrentWorkoutDraft();
+    if (
+      exercises.length === 0 &&
+      (!draft || draft.workoutId !== currentWorkout.id)
+    ) {
+      return;
+    }
+    upsertCurrentWorkoutDraft({
+      workoutId: currentWorkout.id,
+      startedAt: currentWorkout.startedAt,
+      templateId: currentWorkout.templateId ?? null,
+      exercises,
+      notes: workoutNote,
+    });
+  }, [currentWorkout, workoutNote, watchedExercises]);
+
   const currentWorkoutIdRef = useRef<string | null>(null);
   currentWorkoutIdRef.current = currentWorkout?.id ?? null;
   const restoringDraftRef = useRef(false);
@@ -375,12 +411,30 @@ export function Workout({
   useEffect(() => {
     if (!currentWorkout) return;
     const draft = readCurrentWorkoutDraft();
-    if (draft?.workoutId === currentWorkout.id) return;
+    if (draft?.workoutId === currentWorkout.id) {
+      const draftExercises = Array.isArray(draft.exercises)
+        ? (draft.exercises as WorkoutExercise[])
+        : [];
+      if (draftExercises.length > 0) {
+        reset({ exercises: draftExercises });
+        replaceExercises(draftExercises);
+        return;
+      }
+    }
 
     const initialNames = consumeInitialExercises();
-    const initialExercises =
+    const templateExerciseNames =
+      currentWorkout.templateId != null
+        ? (templates.find((tmpl) => tmpl.id === currentWorkout.templateId)
+            ?.exerciseUniqueNames ?? [])
+        : [];
+    const exerciseNames =
       initialNames && initialNames.length > 0
-        ? initialNames.map((exerciseUniqueName) => ({
+        ? initialNames
+        : templateExerciseNames;
+    const initialExercises =
+      exerciseNames.length > 0
+        ? exerciseNames.map((exerciseUniqueName) => ({
             exerciseUniqueName,
             sets: [defaultSet()],
           }))
@@ -389,10 +443,12 @@ export function Workout({
     replaceExercises(initialExercises);
   }, [
     currentWorkout?.id,
+    currentWorkout?.templateId,
     consumeInitialExercises,
     reset,
     currentWorkout,
     replaceExercises,
+    templates,
   ]);
 
   useEffect(() => {
@@ -422,6 +478,7 @@ export function Workout({
         startedAt: currentWorkout.startedAt,
         templateId: currentWorkout.templateId ?? null,
         exercises: nextExercises,
+        notes: workoutNote,
       });
     });
 
@@ -433,9 +490,10 @@ export function Workout({
         startedAt: currentWorkout.startedAt,
         templateId: currentWorkout.templateId ?? null,
         exercises: watchedExercises ?? [],
+        notes: workoutNote,
       });
     };
-  }, [currentWorkout, watch, watchedExercises]);
+  }, [currentWorkout, watch, watchedExercises, workoutNote]);
 
   const fullExerciseOptions = useMemo(
     () => buildSortedExerciseSelectOptions(allExercises, t),
@@ -462,7 +520,7 @@ export function Workout({
       completedAt: new Date().toISOString(),
       templateId: currentWorkout!.templateId ?? null,
       templateName: templateForSave?.name?.trim() || null,
-      notes: finishNote.trim(),
+      notes: workoutNote.trim(),
       exercises: data.exercises.map((ex) => {
         const mapped = (ex.sets ?? []).map((s) => ({
           weight: inputWeightToKg(s.weight ?? "", weightUnit),
@@ -495,7 +553,7 @@ export function Workout({
     }
     appendWorkout(stored);
     setFinishModalOpen(false);
-    setFinishNote("");
+    setWorkoutNote("");
     endWorkout();
     navigate(routes.workout, { state: { tab: "completed" } });
   });
@@ -537,6 +595,10 @@ export function Workout({
 
   const onDiscardClick = () => setDiscardModalOpen(true);
   const onFinishClick = () => {
+    if (hasEmptySetsInForm) {
+      setShowEmptySetsError(true);
+      return;
+    }
     if (!canFinish) return;
     setFinishModalOpen(true);
   };
@@ -683,6 +745,34 @@ export function Workout({
                 {t("exercisePicker_favoritesOnlyDisabledHint")}
               </p>
             )}
+          </div>
+          <label className="hidden sm:flex flex-col gap-2 mb-3 shrink-0">
+            <span className="text-sm font-medium text-brand-dark">
+              {t("workoutDetail_note")}
+            </span>
+            <textarea
+              value={workoutNote}
+              onChange={(e) => setWorkoutNote(e.target.value)}
+              placeholder={t("workout_finishModalNotePlaceholder")}
+              rows={3}
+              className="w-full rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder"
+            />
+          </label>
+          <div className="sm:hidden mb-3 shrink-0">
+            <button
+              type="button"
+              onClick={() => setNoteModalOpen(true)}
+              className={cn(
+                "w-full rounded-lg border px-4 py-2 text-sm font-medium transition-colors",
+                workoutNote.trim()
+                  ? "border-brand-primary text-brand-primary hover:bg-brand-primary/10"
+                  : "border-brand-border text-brand-text hover:bg-brand-bg-soft",
+              )}
+            >
+              {workoutNote.trim()
+                ? t("exerciseNote_edit")
+                : t("workout_finishModalNoteLabel")}
+            </button>
           </div>
           <ul
             ref={exerciseListScrollRef}
@@ -985,7 +1075,7 @@ export function Workout({
         </div>
       </div>
 
-      {hasEmptySetsInForm && (
+      {showEmptySetsError && hasEmptySetsInForm && (
         <p className="text-sm text-red-400 mt-2">
           {t("workout_noEmptySetsMessage")}
         </p>
@@ -995,13 +1085,7 @@ export function Workout({
         <button
           type="button"
           onClick={onFinishClick}
-          disabled={!canFinish}
-          className={cn(
-            "px-4 py-2 rounded-lg font-medium transition-colors duration-300 max-[479px]:w-full",
-            canFinish
-              ? "bg-brand-primary text-brand-bg hover:bg-brand-primary-hover"
-              : "bg-brand-code-bg text-brand-text-muted cursor-not-allowed",
-          )}
+          className="px-4 py-2 rounded-lg font-medium transition-colors duration-300 max-[479px]:w-full bg-brand-primary text-brand-bg hover:bg-brand-primary-hover"
         >
           {t("workout_finish")}
         </button>
@@ -1093,6 +1177,45 @@ export function Workout({
           </div>
         </>
       )}
+      {noteModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="workout-note-modal-title"
+        >
+          <div
+            className="absolute inset-0 bg-black/60"
+            aria-hidden="true"
+            onClick={() => setNoteModalOpen(false)}
+          />
+          <div className="relative w-full max-w-md rounded-xl border border-brand-border bg-brand-bg-soft p-6 shadow-lg">
+            <h2
+              id="workout-note-modal-title"
+              className="text-lg font-semibold text-brand-dark mb-2"
+            >
+              {t("workoutDetail_note")}
+            </h2>
+            <textarea
+              value={workoutNote}
+              onChange={(e) => setWorkoutNote(e.target.value)}
+              placeholder={t("workout_finishModalNotePlaceholder")}
+              rows={4}
+              autoFocus
+              className="w-full rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder"
+            />
+            <div className="flex justify-end gap-3 mt-4">
+              <button
+                type="button"
+                onClick={() => setNoteModalOpen(false)}
+                className="rounded-lg px-4 py-2 text-sm font-medium bg-brand-primary text-brand-bg hover:bg-brand-primary-hover transition-colors"
+              >
+                {t("workoutEdit_save")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {finishModalOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -1115,21 +1238,7 @@ export function Workout({
             <p className="text-brand-text-muted text-sm mb-4">
               {t("workout_finishModalMessage")}
             </p>
-            <label
-              htmlFor="workout-finish-note"
-              className="block text-sm font-medium text-brand-dark mb-1.5"
-            >
-              {t("workout_finishModalNoteLabel")}
-            </label>
-            <textarea
-              id="workout-finish-note"
-              value={finishNote}
-              onChange={(e) => setFinishNote(e.target.value)}
-              placeholder={t("workout_finishModalNotePlaceholder")}
-              rows={4}
-              className="w-full rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder"
-            />
-            <div className="flex justify-end gap-3 mt-4">
+            <div className="flex justify-end gap-3">
               <button
                 type="button"
                 onClick={() => setFinishModalOpen(false)}

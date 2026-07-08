@@ -3,6 +3,7 @@ export type CurrentWorkoutDraft = {
   startedAt: string;
   templateId?: string | null;
   exercises: unknown;
+  notes?: string;
 };
 
 const STORAGE_KEY = "gym-tracker.currentWorkoutDraft.v1";

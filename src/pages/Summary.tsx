@@ -1,5 +1,5 @@
-import { useMemo } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useMemo } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useCompletedWorkouts } from "../contexts/CompletedWorkoutsContext";
 import { routes } from "../routes";
@@ -12,6 +12,7 @@ import {
   groupWorkoutsByCalendarWeekDescending,
   groupWorkoutsByCalendarMonthDescending,
 } from "../helpers/workoutStats";
+import { PersonalBestsList } from "../components/PersonalBestsList";
 import { cn } from "../lib/utils";
 
 const MONTH_KEYS = [
@@ -28,6 +29,10 @@ const MONTH_KEYS = [
   "month_november",
   "month_december",
 ] as const;
+
+type SummaryLocationState = {
+  section?: string;
+};
 
 function formatDMY(d: Date) {
   return [
@@ -70,6 +75,8 @@ function StatCard({ value, label }: { value: number; label: string }) {
 
 export function Summary() {
   const { t } = useLanguage();
+  const location = useLocation();
+  const scrollSection = (location.state as SummaryLocationState | null)?.section;
   const { workouts, isLoading } = useCompletedWorkouts();
 
   const weekWorkouts = useMemo(
@@ -98,6 +105,16 @@ export function Summary() {
   );
 
   const streak = useMemo(() => getCurrentStreakWeeks(workouts), [workouts]);
+
+  useEffect(() => {
+    if (scrollSection !== "personal-bests") return;
+    const el = document.getElementById("personal-bests");
+    if (!el) return;
+    const timer = window.setTimeout(() => {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [scrollSection]);
 
   return (
     <div className="flex flex-col gap-8">
@@ -168,48 +185,46 @@ export function Summary() {
             <h2 className="text-lg font-medium text-brand-dark mb-3">
               {t("summary_byWeek")}
             </h2>
-            <div className="min-w-0 rounded-xl border border-brand-border bg-brand-bg-soft overflow-hidden">
-              <div className="max-sm:overflow-x-auto">
-                <table className="w-full min-w-[36rem] text-sm sm:min-w-0">
-                  <thead>
-                    <tr className="border-b border-brand-border text-left text-brand-text-muted">
-                      <th className="px-4 py-3 font-medium">
-                        {t("summary_column_period")}
-                      </th>
-                      <th className="px-4 py-3 font-medium text-right w-24">
-                        {t("summary_column_trainings")}
-                      </th>
-                      <th className="px-4 py-3 font-medium text-right w-24">
-                        {t("summary_column_sets")}
-                      </th>
-                      <th className="px-4 py-3 font-medium text-right w-28">
-                        {t("summary_column_volume")}
-                      </th>
+            <div className="rounded-xl border border-brand-border bg-brand-bg-soft overflow-x-auto">
+              <table className="w-full min-w-[36rem] text-sm">
+                <thead>
+                  <tr className="border-b border-brand-border text-left text-brand-text-muted">
+                    <th className="px-4 py-3 font-medium">
+                      {t("summary_column_period")}
+                    </th>
+                    <th className="px-4 py-3 font-medium text-right w-24">
+                      {t("summary_column_trainings")}
+                    </th>
+                    <th className="px-4 py-3 font-medium text-right w-24">
+                      {t("summary_column_sets")}
+                    </th>
+                    <th className="px-4 py-3 font-medium text-right w-28">
+                      {t("summary_column_volume")}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {byWeek.map(({ weekStartMonday, workouts: wk }) => (
+                    <tr
+                      key={weekStartMonday.getTime()}
+                      className="border-b border-brand-border last:border-0"
+                    >
+                      <td className="px-4 py-3 text-brand-dark">
+                        {formatWeekRange(weekStartMonday)}
+                      </td>
+                      <td className="px-4 py-3 text-right tabular-nums">
+                        {wk.length}
+                      </td>
+                      <td className="px-4 py-3 text-right tabular-nums">
+                        {countTotalSets(wk)}
+                      </td>
+                      <td className="px-4 py-3 text-right tabular-nums">
+                        {formatVolumeKgReps(sumWorkoutsVolumeKg(wk))}
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {byWeek.map(({ weekStartMonday, workouts: wk }) => (
-                      <tr
-                        key={weekStartMonday.getTime()}
-                        className="border-b border-brand-border last:border-0"
-                      >
-                        <td className="px-4 py-3 text-brand-dark">
-                          {formatWeekRange(weekStartMonday)}
-                        </td>
-                        <td className="px-4 py-3 text-right tabular-nums">
-                          {wk.length}
-                        </td>
-                        <td className="px-4 py-3 text-right tabular-nums">
-                          {countTotalSets(wk)}
-                        </td>
-                        <td className="px-4 py-3 text-right tabular-nums">
-                          {formatVolumeKgReps(sumWorkoutsVolumeKg(wk))}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </section>
 
@@ -217,49 +232,54 @@ export function Summary() {
             <h2 className="text-lg font-medium text-brand-dark mb-3">
               {t("summary_byMonth")}
             </h2>
-            <div className="min-w-0 rounded-xl border border-brand-border bg-brand-bg-soft overflow-hidden">
-              <div className="max-sm:overflow-x-auto">
-                <table className="w-full min-w-[36rem] text-sm sm:min-w-0">
-                  <thead>
-                    <tr className="border-b border-brand-border text-left text-brand-text-muted">
-                      <th className="px-4 py-3 font-medium">
-                        {t("summary_column_period")}
-                      </th>
-                      <th className="px-4 py-3 font-medium text-right w-24">
-                        {t("summary_column_trainings")}
-                      </th>
-                      <th className="px-4 py-3 font-medium text-right w-24">
-                        {t("summary_column_sets")}
-                      </th>
-                      <th className="px-4 py-3 font-medium text-right w-28">
-                        {t("summary_column_volume")}
-                      </th>
+            <div className="rounded-xl border border-brand-border bg-brand-bg-soft overflow-x-auto">
+              <table className="w-full min-w-[36rem] text-sm">
+                <thead>
+                  <tr className="border-b border-brand-border text-left text-brand-text-muted">
+                    <th className="px-4 py-3 font-medium">
+                      {t("summary_column_period")}
+                    </th>
+                    <th className="px-4 py-3 font-medium text-right w-24">
+                      {t("summary_column_trainings")}
+                    </th>
+                    <th className="px-4 py-3 font-medium text-right w-24">
+                      {t("summary_column_sets")}
+                    </th>
+                    <th className="px-4 py-3 font-medium text-right w-28">
+                      {t("summary_column_volume")}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {byMonth.map(({ year, monthIndex, workouts: mw }) => (
+                    <tr
+                      key={`${year}-${monthIndex}`}
+                      className="border-b border-brand-border last:border-0"
+                    >
+                      <td className="px-4 py-3 text-brand-dark">
+                        {formatMonthYear(year, monthIndex, t)}
+                      </td>
+                      <td className="px-4 py-3 text-right tabular-nums">
+                        {mw.length}
+                      </td>
+                      <td className="px-4 py-3 text-right tabular-nums">
+                        {countTotalSets(mw)}
+                      </td>
+                      <td className="px-4 py-3 text-right tabular-nums">
+                        {formatVolumeKgReps(sumWorkoutsVolumeKg(mw))}
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {byMonth.map(({ year, monthIndex, workouts: mw }) => (
-                      <tr
-                        key={`${year}-${monthIndex}`}
-                        className="border-b border-brand-border last:border-0"
-                      >
-                        <td className="px-4 py-3 text-brand-dark">
-                          {formatMonthYear(year, monthIndex, t)}
-                        </td>
-                        <td className="px-4 py-3 text-right tabular-nums">
-                          {mw.length}
-                        </td>
-                        <td className="px-4 py-3 text-right tabular-nums">
-                          {countTotalSets(mw)}
-                        </td>
-                        <td className="px-4 py-3 text-right tabular-nums">
-                          {formatVolumeKgReps(sumWorkoutsVolumeKg(mw))}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                </tbody>
+              </table>
             </div>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-medium text-brand-dark mb-3">
+              {t("user_personalBestHeading")}
+            </h2>
+            <PersonalBestsList id="personal-bests" />
           </section>
         </>
       )}

@@ -174,6 +174,7 @@ export function WorkoutEdit() {
     exerciseIndex: number;
     setIndex: number;
   } | null>(null);
+  const [showEmptySetsError, setShowEmptySetsError] = useState(false);
 
   const { control, register, watch, handleSubmit, setValue, reset } =
     useForm<WorkoutFormValues>({
@@ -209,6 +210,10 @@ export function WorkoutEdit() {
   const hasEmptySetsInForm = (watchedExercises ?? []).some((ex) =>
     (ex.sets ?? []).some(isEmptySet),
   );
+
+  useEffect(() => {
+    if (!hasEmptySetsInForm) setShowEmptySetsError(false);
+  }, [hasEmptySetsInForm]);
 
   useEffect(() => {
     if (!workout) return;
@@ -277,7 +282,10 @@ export function WorkoutEdit() {
 
   const onSave = handleSubmit(async (data) => {
     if (!id || !workout) return;
-    if (hasEmptySetsInForm) return;
+    if (hasEmptySetsInForm) {
+      setShowEmptySetsError(true);
+      return;
+    }
     const completedAt = datetimeLocalToIso(data.completedAt);
     if (!completedAt) return;
     const startedAt = startedAtForCompletedAt(workout.startedAt, completedAt);
@@ -673,7 +681,7 @@ export function WorkoutEdit() {
         </form>
       </div>
 
-      {hasEmptySetsInForm && (
+      {showEmptySetsError && hasEmptySetsInForm && (
         <p className="text-sm text-red-400 mt-2">
           {t("workout_noEmptySetsMessage")}
         </p>
@@ -683,13 +691,7 @@ export function WorkoutEdit() {
         <button
           type="submit"
           form="workout-edit-form"
-          disabled={hasEmptySetsInForm}
-          className={cn(
-            "px-4 py-2 rounded-lg font-medium hover:bg-brand-primary-hover transition-colors duration-300",
-            hasEmptySetsInForm
-              ? "bg-brand-code-bg text-brand-text-muted cursor-not-allowed"
-              : "bg-brand-primary text-brand-bg",
-          )}
+          className="px-4 py-2 rounded-lg font-medium hover:bg-brand-primary-hover transition-colors duration-300 bg-brand-primary text-brand-bg"
         >
           {t("workoutEdit_save")}
         </button>
