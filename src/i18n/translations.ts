@@ -217,6 +217,16 @@ export const translations: Record<Locale, Record<string, string>> = {
     user_saveFailed: "Could not save. Check the message below.",
     user_accountHeading: "Account",
     user_changePassword: "Change password",
+    user_changeEmail: "Change email",
+    user_currentEmail: "Current email",
+    user_newEmail: "New email",
+    user_confirmNewEmail: "Confirm new email",
+    user_emailChangeSuccess:
+      "Confirmation emails sent. Check your old and new inbox to confirm the change.",
+    user_emailChangeConfirmed: "Email address updated.",
+    user_emailChangePending: "Pending change to {email}. Confirm via the links we sent.",
+    auth_error_emailMismatch: "Emails must match.",
+    auth_error_sameEmail: "Enter a different email address.",
     user_logout: "Log out",
     user_deleteAccount: "Delete account",
     user_deleteAccountConfirm:
@@ -561,6 +571,17 @@ export const translations: Record<Locale, Record<string, string>> = {
     user_saveFailed: "Nie udało się zapisać. Zobacz komunikat poniżej.",
     user_accountHeading: "Konto",
     user_changePassword: "Zmień hasło",
+    user_changeEmail: "Zmień e-mail",
+    user_currentEmail: "Obecny e-mail",
+    user_newEmail: "Nowy e-mail",
+    user_confirmNewEmail: "Potwierdź nowy e-mail",
+    user_emailChangeSuccess:
+      "Wysłano e-maile potwierdzające. Sprawdź starą i nową skrzynkę, aby potwierdzić zmianę.",
+    user_emailChangeConfirmed: "Adres e-mail został zaktualizowany.",
+    user_emailChangePending:
+      "Oczekuje zmiana na {email}. Potwierdź ją linkami z wiadomości.",
+    auth_error_emailMismatch: "Adresy e-mail muszą być takie same.",
+    auth_error_sameEmail: "Wpisz inny adres e-mail.",
     user_logout: "Wyloguj",
     user_deleteAccount: "Usuń konto",
     user_deleteAccountConfirm:

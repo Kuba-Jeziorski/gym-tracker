@@ -5,15 +5,17 @@ import { useWeightUnit } from '../contexts/WeightUnitContext'
 import { useUserProfile } from '../contexts/UserProfileContext'
 import { kgToLb, lbToKg } from '../helpers/weightConversion'
 import { cn } from '../lib/utils'
+import { changeEmail } from '../services/authDb'
 import { supabase } from '../services/supabaseClient'
 import { ConfirmModal } from '../components/ConfirmModal'
 
 type SaveUi = 'idle' | 'saving' | 'success' | 'error'
 type PasswordUi = 'idle' | 'saving' | 'success' | 'error'
+type EmailUi = 'idle' | 'saving' | 'success' | 'error'
 
 export function User() {
   const { t } = useLanguage()
-  const { signOut } = useAuth()
+  const { user, signOut } = useAuth()
   const { weightUnit } = useWeightUnit()
   const {
     profile,
@@ -34,6 +36,12 @@ export function User() {
   const [passwordUi, setPasswordUi] = useState<PasswordUi>('idle')
   const [passwordError, setPasswordError] = useState('')
 
+  const [newEmail, setNewEmail] = useState('')
+  const [confirmNewEmail, setConfirmNewEmail] = useState('')
+  const [emailUi, setEmailUi] = useState<EmailUi>('idle')
+  const [emailError, setEmailError] = useState('')
+  const [emailChangeConfirmed, setEmailChangeConfirmed] = useState(false)
+
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [deleteUi, setDeleteUi] = useState<'idle' | 'deleting' | 'error'>('idle')
   const [deleteError, setDeleteError] = useState('')
@@ -53,6 +61,31 @@ export function User() {
     return () => {
       if (passwordSuccessTimer.current) clearTimeout(passwordSuccessTimer.current)
     }
+  }, [])
+
+  const emailSuccessTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => {
+    return () => {
+      if (emailSuccessTimer.current) clearTimeout(emailSuccessTimer.current)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const hash = window.location.hash ?? ''
+    if (!hash.includes('type=email_change')) return
+    if (emailSuccessTimer.current) {
+      clearTimeout(emailSuccessTimer.current)
+      emailSuccessTimer.current = null
+    }
+    setEmailUi('success')
+    setEmailError('')
+    setEmailChangeConfirmed(true)
+    window.history.replaceState(null, '', window.location.pathname)
+    emailSuccessTimer.current = setTimeout(() => {
+      setEmailUi('idle')
+      emailSuccessTimer.current = null
+    }, 4000)
   }, [])
 
   const handleSaveChanges = async () => {
@@ -79,6 +112,57 @@ export function User() {
     if (!newPassword.trim() || !confirmNewPassword.trim()) return false
     return newPassword === confirmNewPassword
   }, [newPassword, confirmNewPassword])
+
+  const currentEmail = user?.email ?? ''
+  const pendingEmail = user?.new_email ?? ''
+
+  const canSubmitEmail = useMemo(() => {
+    const trimmed = newEmail.trim()
+    const trimmedConfirm = confirmNewEmail.trim()
+    if (!trimmed || !trimmedConfirm) return false
+    if (trimmed === currentEmail) return false
+    return trimmed === trimmedConfirm
+  }, [newEmail, confirmNewEmail, currentEmail])
+
+  const handleChangeEmail = async () => {
+    const trimmed = newEmail.trim()
+    const trimmedConfirm = confirmNewEmail.trim()
+    if (!trimmed || !trimmedConfirm) {
+      setEmailUi('error')
+      setEmailError(t('auth_error_missingEmail'))
+      return
+    }
+    if (trimmed !== trimmedConfirm) {
+      setEmailUi('error')
+      setEmailError(t('auth_error_emailMismatch'))
+      return
+    }
+    if (trimmed === currentEmail) {
+      setEmailUi('error')
+      setEmailError(t('auth_error_sameEmail'))
+      return
+    }
+    if (emailSuccessTimer.current) {
+      clearTimeout(emailSuccessTimer.current)
+      emailSuccessTimer.current = null
+    }
+    setEmailUi('saving')
+    setEmailError('')
+    setEmailChangeConfirmed(false)
+    const { error } = await changeEmail(trimmed)
+    if (error) {
+      setEmailUi('error')
+      setEmailError(error.message)
+      return
+    }
+    setEmailUi('success')
+    setNewEmail('')
+    setConfirmNewEmail('')
+    emailSuccessTimer.current = setTimeout(() => {
+      setEmailUi('idle')
+      emailSuccessTimer.current = null
+    }, 5000)
+  }
 
   const handleChangePassword = async () => {
     if (!canSubmitPassword) {
@@ -280,6 +364,76 @@ export function User() {
       <section className="mt-8">
         <h2 className="text-lg font-medium text-brand-dark mb-4">{t('user_accountHeading')}</h2>
         <div className="space-y-3 max-w-md">
+          <div className="rounded-xl border border-brand-border bg-brand-bg-soft p-4">
+            <h3 className="text-sm font-medium text-brand-dark mb-3">
+              {t('user_changeEmail')}
+            </h3>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-brand-text-muted mb-1.5">
+                  {t('user_currentEmail')}
+                </label>
+                <p className="text-sm text-brand-text break-all">{currentEmail || '—'}</p>
+              </div>
+              {pendingEmail && (
+                <p className="text-sm text-brand-text-muted" role="status">
+                  {t('user_emailChangePending').replace('{email}', pendingEmail)}
+                </p>
+              )}
+              <div>
+                <label className="block text-sm font-medium text-brand-text-muted mb-1.5">
+                  {t('user_newEmail')}
+                </label>
+                <input
+                  type="email"
+                  autoComplete="email"
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
+                  placeholder={t('auth_emailPlaceholder')}
+                  className="rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder w-full"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-brand-text-muted mb-1.5">
+                  {t('user_confirmNewEmail')}
+                </label>
+                <input
+                  type="email"
+                  autoComplete="email"
+                  value={confirmNewEmail}
+                  onChange={(e) => setConfirmNewEmail(e.target.value)}
+                  placeholder={t('auth_emailPlaceholder')}
+                  className="rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder w-full"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => void handleChangeEmail()}
+                disabled={emailUi === 'saving' || !canSubmitEmail}
+                className={cn(
+                  'w-full rounded-lg px-4 py-2 text-sm font-medium transition-colors',
+                  canSubmitEmail
+                    ? 'bg-brand-primary text-brand-bg hover:bg-brand-primary-hover'
+                    : 'border border-brand-border bg-brand-code-bg text-brand-text-muted cursor-not-allowed',
+                  'disabled:opacity-60 disabled:pointer-events-none',
+                )}
+              >
+                {emailUi === 'saving' ? t('loading') : t('workoutEdit_save')}
+              </button>
+              {emailUi === 'success' && (
+                <p className="text-sm text-brand-primary" role="status">
+                  {emailChangeConfirmed
+                    ? t('user_emailChangeConfirmed')
+                    : t('user_emailChangeSuccess')}
+                </p>
+              )}
+              {emailUi === 'error' && emailError && (
+                <p className="text-sm text-red-400" role="alert">
+                  {emailError}
+                </p>
+              )}
+            </div>
+          </div>
           <div className="rounded-xl border border-brand-border bg-brand-bg-soft p-4">
             <h3 className="text-sm font-medium text-brand-dark mb-3">
               {t('user_changePassword')}
