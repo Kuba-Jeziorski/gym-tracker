@@ -274,6 +274,10 @@ export function Workout({
   const [templateWorkoutTab, setTemplateWorkoutTab] = useState<
     "current" | "last"
   >("current");
+  const [mobileCollapsedExerciseIds, setMobileCollapsedExerciseIds] = useState(
+    () => new Set<string>(),
+  );
+  const exerciseFieldIdsRef = useRef<string[]>([]);
   const exerciseListScrollRef = useRef<HTMLUListElement>(null);
 
   const checkScroll = useCallback(() => {
@@ -375,6 +379,35 @@ export function Workout({
   useEffect(() => {
     checkScroll();
   }, [exerciseFields.length, checkScroll]);
+
+  useEffect(() => {
+    const ids = exerciseFields.map((f) => f.id);
+    const prevIds = exerciseFieldIdsRef.current;
+    exerciseFieldIdsRef.current = ids;
+    setMobileCollapsedExerciseIds((prev) => {
+      const next = new Set([...prev].filter((id) => ids.includes(id)));
+      for (const id of ids) {
+        if (!prevIds.includes(id)) {
+          next.delete(id);
+        }
+      }
+      return next.size === prev.size && [...next].every((id) => prev.has(id))
+        ? prev
+        : next;
+    });
+  }, [exerciseFields]);
+
+  const toggleMobileExerciseCollapsed = useCallback((fieldId: string) => {
+    setMobileCollapsedExerciseIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(fieldId)) {
+        next.delete(fieldId);
+      } else {
+        next.add(fieldId);
+      }
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     const media = window.matchMedia("(max-width: 639px)");
@@ -793,21 +826,40 @@ export function Workout({
                 exerciseUniqueName,
                 fullExerciseOptions,
               );
+              const isMobileCollapsed = mobileCollapsedExerciseIds.has(field.id);
 
               return (
                 <li
                   key={field.id}
                   className="rounded-lg border border-brand-border bg-brand-bg p-4 space-y-3 list-none"
                 >
-                  <div className="flex justify-end -mt-0.5">
+                  <div className="flex w-full items-center justify-between sm:justify-end gap-3 -mt-0.5">
+                    <button
+                      type="button"
+                      onClick={() => toggleMobileExerciseCollapsed(field.id)}
+                      aria-expanded={!isMobileCollapsed}
+                      className="sm:hidden text-sm font-medium text-brand-primary hover:text-brand-primary-hover transition-colors shrink-0"
+                    >
+                      {isMobileCollapsed
+                        ? t("workout_open")
+                        : t("workout_hide")}
+                    </button>
                     <button
                       type="button"
                       onClick={() => setRemoveExerciseTarget(index)}
-                      className="text-sm text-brand-text-muted hover:text-red-400 transition-colors"
+                      className="text-sm text-brand-text-muted hover:text-red-400 transition-colors shrink-0"
                     >
                       {t("workout_removeExercise")}
                     </button>
                   </div>
+                  <div
+                    className={cn(
+                      "space-y-3",
+                      isMobileViewport &&
+                        isMobileCollapsed &&
+                        "hidden",
+                    )}
+                  >
                   <div className="flex items-center gap-2 flex-wrap">
                     <label className="text-sm font-medium text-brand-dark shrink-0">
                       {t("workout_exercise")}
@@ -1056,6 +1108,7 @@ export function Workout({
                       </div>
                     </div>
                   )}
+                  </div>
                 </li>
               );
             })}
