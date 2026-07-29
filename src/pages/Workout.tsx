@@ -274,10 +274,10 @@ export function Workout({
   const [templateWorkoutTab, setTemplateWorkoutTab] = useState<
     "current" | "last"
   >("current");
-  const [mobileCollapsedExerciseIds, setMobileCollapsedExerciseIds] = useState(
-    () => new Set<string>(),
-  );
-  const exerciseFieldIdsRef = useRef<string[]>([]);
+  // For mobile accordion, track collapsed state by exercise index.
+  // This stays stable when only "sets" values change (as opposed to `field.id`).
+  const [mobileCollapsedExerciseIndexes, setMobileCollapsedExerciseIndexes] =
+    useState<Set<number>>(() => new Set<number>());
   const exerciseListScrollRef = useRef<HTMLUListElement>(null);
 
   const checkScroll = useCallback(() => {
@@ -381,29 +381,22 @@ export function Workout({
   }, [exerciseFields.length, checkScroll]);
 
   useEffect(() => {
-    const ids = exerciseFields.map((f) => f.id);
-    const prevIds = exerciseFieldIdsRef.current;
-    exerciseFieldIdsRef.current = ids;
-    setMobileCollapsedExerciseIds((prev) => {
-      const next = new Set([...prev].filter((id) => ids.includes(id)));
-      for (const id of ids) {
-        if (!prevIds.includes(id)) {
-          next.delete(id);
-        }
-      }
-      return next.size === prev.size && [...next].every((id) => prev.has(id))
+    // Clamp collapsed indices when exercises are added/removed.
+    setMobileCollapsedExerciseIndexes((prev) => {
+      const next = new Set([...prev].filter((i) => i < exerciseFields.length));
+      return next.size === prev.size && [...next].every((i) => prev.has(i))
         ? prev
         : next;
     });
-  }, [exerciseFields]);
+  }, [exerciseFields.length]);
 
-  const toggleMobileExerciseCollapsed = useCallback((fieldId: string) => {
-    setMobileCollapsedExerciseIds((prev) => {
+  const toggleMobileExerciseCollapsed = useCallback((exerciseIndex: number) => {
+    setMobileCollapsedExerciseIndexes((prev) => {
       const next = new Set(prev);
-      if (next.has(fieldId)) {
-        next.delete(fieldId);
+      if (next.has(exerciseIndex)) {
+        next.delete(exerciseIndex);
       } else {
-        next.add(fieldId);
+        next.add(exerciseIndex);
       }
       return next;
     });
@@ -826,7 +819,8 @@ export function Workout({
                 exerciseUniqueName,
                 fullExerciseOptions,
               );
-              const isMobileCollapsed = mobileCollapsedExerciseIds.has(field.id);
+              const isMobileCollapsed =
+                mobileCollapsedExerciseIndexes.has(index);
 
               return (
                 <li
@@ -836,7 +830,7 @@ export function Workout({
                   <div className="flex w-full items-center justify-between sm:justify-end gap-3 -mt-0.5">
                     <button
                       type="button"
-                      onClick={() => toggleMobileExerciseCollapsed(field.id)}
+                      onClick={() => toggleMobileExerciseCollapsed(index)}
                       aria-expanded={!isMobileCollapsed}
                       className="sm:hidden text-sm font-medium text-brand-primary hover:text-brand-primary-hover transition-colors shrink-0"
                     >
