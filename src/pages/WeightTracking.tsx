@@ -32,6 +32,17 @@ function displayWeight(kg: number, unit: 'kg' | 'lb'): number {
   return unit === 'lb' ? formatChartNumber(kgToLb(kg)) : formatChartNumber(kg)
 }
 
+function chartYDomain(values: number[], unit: 'kg' | 'lb'): [number, number] {
+  if (values.length === 0) return [0, 10]
+  const min = Math.min(...values)
+  const max = Math.max(...values)
+  const pad = unit === 'lb' ? kgToLb(10) : 10
+  const low = Math.max(0, Math.floor(min - pad))
+  const high = Math.ceil(max + pad)
+  if (high <= low) return [Math.max(0, low - 1), low + 1]
+  return [low, high]
+}
+
 export function WeightTracking() {
   const { t } = useLanguage()
   const { weightUnit } = useWeightUnit()
@@ -52,6 +63,11 @@ export function WeightTracking() {
         value: displayWeight(item.weightKg, weightUnit),
       })),
     [measurements, weightUnit],
+  )
+
+  const yDomain = useMemo(
+    () => chartYDomain(chartData.map((point) => point.value), weightUnit),
+    [chartData, weightUnit],
   )
 
   const history = useMemo(
@@ -92,25 +108,32 @@ export function WeightTracking() {
   }
 
   return (
-    <div>
-      <h1 className="text-2xl font-semibold text-brand-dark mb-2">{t('weight_title')}</h1>
-      <p className="text-brand-text-muted mb-8">{t('weight_description')}</p>
+    <div className="flex flex-col gap-8">
+      <header>
+        <h1 className="text-2xl font-semibold text-brand-dark mb-1">{t('weight_title')}</h1>
+        <p className="text-brand-text-muted">{t('weight_description')}</p>
+      </header>
 
-      <section className="mb-10 max-w-xl">
+      <section className="max-w-xl">
         <h2 className="text-lg font-medium text-brand-dark mb-4">{t('weight_addHeading')}</h2>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-          <div className="sm:flex-1">
+        <div className="flex flex-col gap-4">
+          <div>
             <label className="block text-sm font-medium text-brand-text-muted mb-1.5" htmlFor="weight-date">
               {t('weight_dateLabel')}
             </label>
-            <input
-              id="weight-date"
-              type="date"
-              max={today}
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text w-full"
-            />
+            <div className="relative h-11 w-full overflow-hidden rounded-lg border border-brand-border bg-brand-bg">
+              <span className="pointer-events-none absolute inset-0 flex items-center px-3 text-brand-dark">
+                {date ? formatWeightDate(date) : ''}
+              </span>
+              <input
+                id="weight-date"
+                type="date"
+                max={today}
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+              />
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-brand-text-muted mb-1.5" htmlFor="weight-value">
@@ -126,7 +149,7 @@ export function WeightTracking() {
                 value={weightInput}
                 onChange={(e) => setWeightInput(e.target.value)}
                 placeholder={t('weight_valuePlaceholder')}
-                className="rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder w-28"
+                className="box-border h-11 w-28 rounded-lg border border-brand-border bg-brand-bg px-3 text-brand-dark placeholder:text-brand-placeholder"
               />
               <span className="text-brand-text-muted text-sm">{weightUnitLabel}</span>
             </div>
@@ -136,7 +159,7 @@ export function WeightTracking() {
             onClick={() => void handleSave()}
             disabled={saving}
             className={cn(
-              'rounded-lg px-4 py-2 text-sm font-medium transition-colors',
+              'h-11 rounded-lg px-4 text-sm font-medium transition-colors',
               'bg-brand-primary text-brand-bg hover:bg-brand-primary-hover',
               saving && 'opacity-70 pointer-events-none',
             )}
@@ -148,19 +171,27 @@ export function WeightTracking() {
         <p className="mt-3 text-sm text-brand-text-muted">{t('weight_pastDaysHint')}</p>
       </section>
 
-      <section className="mb-10">
-        <h2 className="text-lg font-medium text-brand-dark mb-4">{t('weight_chartHeading')}</h2>
+      <section>
         {isLoading ? (
           <p className="text-brand-text-muted text-sm">{t('loading')}</p>
         ) : chartData.length < 1 ? (
           <p className="text-brand-text-muted text-sm">{t('weight_chartEmpty')}</p>
         ) : (
           <div className="rounded-xl border border-brand-border bg-brand-bg-soft p-4">
+            <h2 className="text-lg font-medium text-brand-dark mb-4">
+              {t('weight_chartHeading')}
+            </h2>
             <div className="overflow-x-auto sm:overflow-x-visible">
               <div className="h-72 min-w-[550px] w-[550px] sm:w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={chartData} margin={{ top: 8, right: 16, left: 16, bottom: 8 }}>
-                    <CartesianGrid stroke="var(--brand-border)" strokeDasharray="3 3" />
+                  <LineChart
+                    data={chartData}
+                    margin={{ top: 8, right: 16, left: 0, bottom: 8 }}
+                  >
+                    <CartesianGrid
+                      stroke="var(--brand-border)"
+                      strokeDasharray="3 3"
+                    />
                     <XAxis
                       dataKey="dateLabel"
                       stroke="var(--brand-text-muted)"
@@ -168,12 +199,12 @@ export function WeightTracking() {
                       tickMargin={8}
                     />
                     <YAxis
+                      type="number"
                       stroke="var(--brand-text-muted)"
                       tick={{ fill: 'var(--brand-text-muted)', fontSize: 12 }}
                       tickMargin={8}
-                      width={72}
                       unit={` ${weightUnitLabel}`}
-                      domain={['auto', 'auto']}
+                      domain={yDomain}
                     />
                     <Tooltip
                       content={({ active, payload, label }) => {

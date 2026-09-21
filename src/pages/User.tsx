@@ -1,9 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLanguage } from '../contexts/LanguageContext'
 import { useAuth } from '../contexts/AuthContext'
-import { useWeightUnit } from '../contexts/WeightUnitContext'
 import { useUserProfile } from '../contexts/UserProfileContext'
-import { kgToLb, lbToKg } from '../helpers/weightConversion'
 import { cn } from '../lib/utils'
 import { changeEmail } from '../services/authDb'
 import { supabase } from '../services/supabaseClient'
@@ -16,11 +14,9 @@ type EmailUi = 'idle' | 'saving' | 'success' | 'error'
 export function User() {
   const { t } = useLanguage()
   const { user, signOut } = useAuth()
-  const { weightUnit } = useWeightUnit()
   const {
     profile,
     setName,
-    setWeightKg,
     setHeightCm,
     setGender,
     refreshProfileFromServer,
@@ -203,28 +199,6 @@ export function User() {
     await signOut()
   }
 
-  const weightDisplayValue =
-    profile.weightKg != null
-      ? weightUnit === 'lb'
-        ? (kgToLb(profile.weightKg) % 1 === 0
-            ? kgToLb(profile.weightKg).toString()
-            : kgToLb(profile.weightKg).toFixed(1))
-        : profile.weightKg.toString()
-      : ''
-
-  const handleWeightChange = (value: string) => {
-    const trimmed = value.trim()
-    if (trimmed === '') {
-      setWeightKg(null)
-      return
-    }
-    const num = parseFloat(trimmed)
-    if (!Number.isNaN(num) && num >= 0) {
-      const kg = weightUnit === 'lb' ? lbToKg(num) : num
-      setWeightKg(kg)
-    }
-  }
-
   const handleHeightChange = (value: string) => {
     const trimmed = value.trim()
     if (trimmed === '') {
@@ -260,27 +234,6 @@ export function User() {
           </div>
 
           <div className="flex flex-col gap-4 md:flex-row md:gap-6">
-            <div className="md:flex-1">
-              <label className="block text-sm font-medium text-brand-text-muted mb-1.5">
-                {t('settings_weightHeading')}
-              </label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  min={0}
-                  step={weightUnit === 'kg' ? 0.5 : 1}
-                  value={weightDisplayValue}
-                  onChange={(e) => handleWeightChange(e.target.value)}
-                  placeholder={t('settings_weightPlaceholder')}
-                  className="rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-text placeholder:text-brand-placeholder w-28"
-                />
-                <span className="text-brand-text-muted text-sm">
-                  {t(weightUnit === 'kg' ? 'unit_kg' : 'unit_lb')}
-                </span>
-              </div>
-            </div>
-
             <div className="md:flex-1">
               <label className="block text-sm font-medium text-brand-text-muted mb-1.5">
                 {t('settings_heightHeading')}

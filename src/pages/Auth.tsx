@@ -4,7 +4,6 @@ import type { UserGender } from "../contexts/UserProfileContext";
 import type { WeightUnit } from "../contexts/WeightUnitContext";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useAuth } from "../contexts/AuthContext";
-import { lbToKg } from "../helpers/weightConversion";
 import { cn } from "../lib/utils";
 import { supabase } from "../services/supabaseClient";
 
@@ -28,7 +27,6 @@ export function Auth() {
   const [signupLocale, setSignupLocale] = useState<Locale>("en");
   const [signupWeightUnit, setSignupWeightUnit] = useState<WeightUnit>("kg");
   const [signupName, setSignupName] = useState("");
-  const [signupWeight, setSignupWeight] = useState("");
   const [signupHeight, setSignupHeight] = useState("");
   const [signupGender, setSignupGender] = useState<UserGender | null>(null);
 
@@ -75,19 +73,11 @@ export function Auth() {
         const { error: err } = await signIn(trimmedEmail, trimmedPassword);
         if (err) setError(err.message);
       } else if (tab === "signup") {
-        const weightNum = parseFloat(signupWeight.trim());
-        const weightKg =
-          !Number.isNaN(weightNum) && weightNum >= 0
-            ? signupWeightUnit === "lb"
-              ? lbToKg(weightNum)
-              : weightNum
-            : null;
         const heightNum = parseFloat(signupHeight.trim());
         const heightCm =
           !Number.isNaN(heightNum) && heightNum >= 0 ? heightNum : null;
         const { error: err } = await signUp(trimmedEmail, trimmedPassword, {
           name: signupName.trim(),
-          weight_kg: weightKg != null ? String(weightKg) : "",
           height_cm: heightCm != null ? String(heightCm) : "",
           gender: signupGender ?? "",
           locale: signupLocale,
@@ -306,28 +296,6 @@ export function Auth() {
                   />
                 </div>
                 <div className="flex gap-6 items-start">
-                  <div className="min-w-0 flex-1">
-                    <label htmlFor="auth-signup-weight" className={labelClass}>
-                      {t("settings_weightHeading")} ({t("auth_optional")})
-                    </label>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <input
-                        id="auth-signup-weight"
-                        type="number"
-                        inputMode="decimal"
-                        min={0}
-                        step={signupWeightUnit === "kg" ? 0.5 : 1}
-                        value={signupWeight}
-                        onChange={(e) => setSignupWeight(e.target.value)}
-                        placeholder={t("settings_weightPlaceholder")}
-                        className="min-w-0 w-full max-w-[7rem] rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-brand-dark placeholder:text-brand-placeholder focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
-                        disabled={submitting}
-                      />
-                      <span className="text-brand-text-muted text-sm shrink-0">
-                        {t(signupWeightUnit === "kg" ? "unit_kg" : "unit_lb")}
-                      </span>
-                    </div>
-                  </div>
                   <div className="min-w-0 flex-1">
                     <label htmlFor="auth-signup-height" className={labelClass}>
                       {t("settings_heightHeading")} ({t("auth_optional")})

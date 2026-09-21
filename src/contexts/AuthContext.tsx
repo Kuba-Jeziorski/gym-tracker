@@ -12,7 +12,6 @@ import type { User } from "@supabase/supabase-js";
 
 export type SignUpUserMetadata = {
   name?: string;
-  weight_kg?: string;
   height_cm?: string;
   gender?: string;
   locale?: string;

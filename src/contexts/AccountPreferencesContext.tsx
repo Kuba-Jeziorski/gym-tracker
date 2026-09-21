@@ -21,14 +21,12 @@ export type MobileFontSizeMode = "standard" | "enlarged";
 
 export type UserProfile = {
   name: string;
-  weightKg: number | null;
   heightCm: number | null;
   gender: UserGender | null;
 };
 
 const emptyProfile: UserProfile = {
   name: "",
-  weightKg: null,
   heightCm: null,
   gender: null,
 };
@@ -42,7 +40,6 @@ type AccountPreferencesValue = {
   setMobileFontSizeMode: (mode: MobileFontSizeMode) => void;
   profile: UserProfile;
   setName: (name: string) => void;
-  setWeightKg: (weightKg: number | null) => void;
   setHeightCm: (heightCm: number | null) => void;
   setGender: (gender: UserGender | null) => void;
   t: (key: string) => string;
@@ -81,7 +78,6 @@ function rowToProfile(row: {
     weightUnit: row.weight_unit === "lb" ? "lb" : "kg",
     profile: {
       name: row.name ?? "",
-      weightKg: row.weight_kg,
       heightCm: row.height_cm,
       gender:
         row.gender === "male" || row.gender === "female"
@@ -121,7 +117,6 @@ function samePrefs(
     a.weightUnit === b.weightUnit &&
     a.mobileFontSizeMode === b.mobileFontSizeMode &&
     a.profile.name === b.profile.name &&
-    numClose(a.profile.weightKg, b.profile.weightKg) &&
     numClose(a.profile.heightCm, b.profile.heightCm) &&
     a.profile.gender === b.profile.gender
   );
@@ -193,7 +188,6 @@ export function AccountPreferencesProvider({ children }: { children: ReactNode }
     ) => {
       return upsertProfile(uid, {
         name: p.name,
-        weight_kg: p.weightKg,
         height_cm: p.heightCm,
         gender: p.gender,
         locale: loc,
@@ -365,7 +359,6 @@ export function AccountPreferencesProvider({ children }: { children: ReactNode }
       if (error || !data) {
         await upsertProfile(user.id, {
           name: "",
-          weight_kg: null,
           height_cm: null,
           gender: null,
           locale: "en",
@@ -480,18 +473,6 @@ export function AccountPreferencesProvider({ children }: { children: ReactNode }
     [scheduleProfilePersist]
   );
 
-  const setWeightKg = useCallback(
-    (weightKg: number | null) => {
-      setProfileState((prev) => {
-        const next = { ...prev, weightKg };
-        profileRef.current = next;
-        return next;
-      });
-      scheduleProfilePersist();
-    },
-    [scheduleProfilePersist]
-  );
-
   const setHeightCm = useCallback(
     (heightCm: number | null) => {
       setProfileState((prev) => {
@@ -545,7 +526,6 @@ export function AccountPreferencesProvider({ children }: { children: ReactNode }
     setMobileFontSizeMode,
     profile,
     setName,
-    setWeightKg,
     setHeightCm,
     setGender,
     t,
@@ -602,7 +582,6 @@ export function useUserProfile() {
   return {
     profile: ctx.profile,
     setName: ctx.setName,
-    setWeightKg: ctx.setWeightKg,
     setHeightCm: ctx.setHeightCm,
     setGender: ctx.setGender,
     flushProfileSave: ctx.flushProfileSave,

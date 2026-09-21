@@ -201,7 +201,7 @@ export function Layout() {
 
         <div
           className={cn(
-            "w-full flex flex-col flex-1 min-h-0 overflow-y-auto",
+            "w-full min-w-0 flex flex-col flex-1 min-h-0 overflow-y-auto",
             "p-4 sm:p-6 lg:p-8",
             "rounded-xl border border-brand-border bg-brand-bg-soft md:border-0 md:bg-transparent md:rounded-none md:p-0",
           )}
