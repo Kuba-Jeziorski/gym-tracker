@@ -5,6 +5,7 @@ export const navItems = [
   { to: routes.workout, labelKey: 'nav_myWorkout' },
   { to: routes.library, labelKey: 'nav_library' },
   { to: routes.summary, labelKey: 'nav_summary' },
+  { to: routes.weight, labelKey: 'nav_weight' },
   { to: routes.install, labelKey: 'nav_install' },
   { to: routes.user, labelKey: 'nav_user' },
   { to: routes.settings, labelKey: 'nav_settings' },
@@ -13,6 +14,7 @@ export const navItems = [
 export const routeTitleKeys: Record<string, string> = {
   [routes.dashboard]: 'titles_dashboard',
   [routes.summary]: 'titles_summary',
+  [routes.weight]: 'titles_weight',
   [routes.workout]: 'titles_myWorkout',
   [routes.library]: 'titles_library',
   [routes.install]: 'titles_install',

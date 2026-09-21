@@ -9,6 +9,9 @@ import { AppErrorBoundary } from './components/AppErrorBoundary'
 const Auth = lazy(() => import('./pages/Auth').then((m) => ({ default: m.Auth })))
 const Dashboard = lazy(() => import('./pages/Dashboard').then((m) => ({ default: m.Dashboard })))
 const Summary = lazy(() => import('./pages/Summary').then((m) => ({ default: m.Summary })))
+const WeightTracking = lazy(() =>
+  import('./pages/WeightTracking').then((m) => ({ default: m.WeightTracking })),
+)
 const MyWorkout = lazy(() => import('./pages/MyWorkout').then((m) => ({ default: m.MyWorkout })))
 const WorkoutDetail = lazy(() => import('./pages/WorkoutDetail').then((m) => ({ default: m.WorkoutDetail })))
 const WorkoutEdit = lazy(() => import('./pages/WorkoutEdit').then((m) => ({ default: m.WorkoutEdit })))
@@ -46,6 +49,7 @@ function App() {
               <Route path={routes.dashboard} element={<Layout />}>
                 <Route index element={<Dashboard />} />
                 <Route path="summary" element={<Summary />} />
+                <Route path="weight" element={<WeightTracking />} />
                 <Route path="workout" element={<MyWorkout />} />
                 <Route path="history/:id" element={<WorkoutDetail />} />
                 <Route path="history/:id/edit" element={<WorkoutEdit />} />

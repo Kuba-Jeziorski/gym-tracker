@@ -6,6 +6,7 @@ export const routes = {
   history: '/history',
   workoutDetail: (id: string) => `/history/${id}`,
   workoutDetailEdit: (id: string) => `/history/${id}/edit`,
+  weight: '/weight',
   library: '/exercises',
   exerciseHistory: (uniqueName: string) =>
     `/exercises/history/${encodeURIComponent(uniqueName)}`,

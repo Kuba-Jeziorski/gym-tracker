@@ -9,6 +9,7 @@ import { CustomExercisesProvider } from './contexts/CustomExercisesContext'
 import { FavoriteExercisesProvider } from './contexts/FavoriteExercisesContext'
 import { WorkoutTemplatesProvider } from './contexts/WorkoutTemplatesContext'
 import { ExerciseNotesProvider } from './contexts/ExerciseNotesContext'
+import { WeightLogsProvider } from './contexts/WeightLogsContext'
 import './index.css'
 import App from './App.tsx'
 
@@ -38,11 +39,13 @@ createRoot(container).render(
             <CompletedWorkoutsProvider>
               <CustomExercisesProvider>
                 <ExerciseNotesProvider>
-                  <WorkoutTemplatesProvider>
-                    <CurrentWorkoutProvider>
-                      <App />
-                    </CurrentWorkoutProvider>
-                  </WorkoutTemplatesProvider>
+                  <WeightLogsProvider>
+                    <WorkoutTemplatesProvider>
+                      <CurrentWorkoutProvider>
+                        <App />
+                      </CurrentWorkoutProvider>
+                    </WorkoutTemplatesProvider>
+                  </WeightLogsProvider>
                 </ExerciseNotesProvider>
               </CustomExercisesProvider>
             </CompletedWorkoutsProvider>

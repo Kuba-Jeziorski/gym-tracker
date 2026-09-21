@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   LayoutDashboard,
   ChartColumn,
+  Scale,
   Dumbbell,
   ListPlus,
   Download,
@@ -22,6 +23,7 @@ import { cn } from "../lib/utils";
 const navIcons: Record<string, typeof LayoutDashboard> = {
   [routes.dashboard]: LayoutDashboard,
   [routes.summary]: ChartColumn,
+  [routes.weight]: Scale,
   [routes.workout]: Dumbbell,
   [routes.library]: ListPlus,
   [routes.install]: Download,
